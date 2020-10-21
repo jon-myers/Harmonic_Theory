@@ -18,20 +18,14 @@
             \remove Time_signature_engraver
         }
         {
-            \time 3/4
-            s4
-            e'4
-            _ \markup {
-                \center-align
-                    \tiny
-                        -14
+            <d' a'>4
+            ^ \markup {
+                \small
+                    +8¢
                 }
-            \once \override Stem.direction = #up
-            bf'4
             _ \markup {
-                \center-align
-                    \tiny
-                        -31
+                \small
+                    +6¢
                 }
         }
         \new Staff
@@ -41,8 +35,15 @@
         }
         {
             \clef "bass"
-            c,4
-            s2
+            <f, c g>4
+            ^ \markup {
+                \small
+                    +4¢
+                }
+            ^ \markup {
+                \small
+                    +2¢
+                }
         }
     >>
 } %! abjad.LilyPondFile._get_formatted_blocks()
