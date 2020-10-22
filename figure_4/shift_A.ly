@@ -18,15 +18,13 @@
             \remove Time_signature_engraver
         }
         {
-            <d' a'>4
-            ^ \markup {
-                \small
-                    +8¢
-                }
-            _ \markup {
-                \small
-                    +6¢
-                }
+            \time 3/4
+            s4
+            s4
+            c'4
+            ef''4
+            e'''4
+            b''''4
         }
         \new Staff
         \with
@@ -34,16 +32,12 @@
             \remove Time_signature_engraver
         }
         {
-            \clef "bass"
-            <f, c g>4
-            ^ \markup {
-                \small
-                    +4¢
-                }
-            ^ \markup {
-                \small
-                    +2¢
-                }
+            d,,4
+            f,4
+            s4
+            s4
+            s4
+            s4
         }
     >>
 } %! abjad.LilyPondFile._get_formatted_blocks()
