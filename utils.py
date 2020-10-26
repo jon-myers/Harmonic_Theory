@@ -32,7 +32,7 @@ def cents_to_hz(cents, root):
     return root * (2 ** (1/12)) ** (cents/100)
 
 def hz_to_cents(hz, root):
-    return 1200 * math.log2(hz / root) 
+    return 1200 * math.log2(hz / root)
 
 def get_segments(pts):
     combs = list(itertools.combinations(range(len(pts)), 2))
@@ -53,14 +53,14 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
             while fracs[f] >= 2:
                 fracs[f] /= 2
             while fracs[f] < 1:
-                fracs[f] *= 2    
+                fracs[f] *= 2
     str_fracs = [str(i.numerator) + ':' + str(i.denominator) for i in fracs]
     if string == True:
         return str_fracs
     else:
         return fracs
 
-def make_plot(pts, primes, path, octaves = None, draw_points = None, 
+def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False):
     c = matplotlib.colors.get_named_colors_mapping()
@@ -77,24 +77,10 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
-    xyz = [pts[:, 0], pts[:, 1], pts[:, 2]]
-    for i, pt in enumerate(pts):
-        ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
-                   s=int(60 * dot_size))
-    # ax.scatter(*xyz, color=colors, depthshade=False, s=int(60 * dot_size))
-    if ratios == True:
-        for i, pt in enumerate(pts):
-            ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
-                    horizontalalignment='right', size='large')
-    for seg in segments:
-        ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5*dot_size)
-
     ax.set_axis_off()
     max = np.max(pts)
     min = np.min(pts)
-    
-    
-    
+
     if origin == True:
         quiver_min = -2
         quiver_max = 3
@@ -116,6 +102,23 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             ax.plot(c, a, b, color='black')
             ax.plot(b, c, a, color='black')
             ax.plot(c, b, a, color='black')
+
+    xyz = [pts[:, 0], pts[:, 1], pts[:, 2]]
+    for i, pt in enumerate(pts):
+        ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
+                   s=int(60 * dot_size))
+    # ax.scatter(*xyz, color=colors, depthshade=False, s=int(60 * dot_size))
+    if ratios == True:
+        for i, pt in enumerate(pts):
+            ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
+                    horizontalalignment='right', size='large')
+    for seg in segments:
+        ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5*dot_size)
+
+
+
+
+
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
@@ -137,8 +140,8 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     z = ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size=4 * dot_size)
     ax.set_axis_off()
     plt.savefig(path + '_legend.pdf')
-    
-    
+
+
 def cartesian_product(*arrays):
     la = len(arrays)
     dtype = np.result_type(*arrays)
