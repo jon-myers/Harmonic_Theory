@@ -18,13 +18,19 @@
             \remove Time_signature_engraver
         }
         {
+            \once \override NoteHead.color = #(x11-color 'black)
             \time 6/4
             c'4
-            r4
-            ef''4
-            r4
-            e''4
-            b''4
+            s4
+            \once \override NoteHead.color = #(x11-color 'MediumSeaGreen)
+            ef'4
+            s4
+            \once \override NoteHead.color = #(x11-color 'DarkOrchid)
+            e'''4
+            \ottava 1
+            \once \override NoteHead.color = #(x11-color 'RoyalBlue)
+            b''''4
+            \ottava 0
         }
         \new Staff
         \with
@@ -33,12 +39,46 @@
         }
         {
             \clef "bass"
-            r4
-            f4
-            r4
+            s4
+            \once \override NoteHead.color = #(x11-color 'SaddleBrown)
+            f,4
+            ^ \markup {
+                \raise
+                    #1.5
+                    \concat
+                        {
+                            \tiny
+                                -2
+                            \hspace
+                                #1.7
+                            \tiny
+                                -33
+                            \hspace
+                                #1.7
+                            \tiny
+                                +31
+                            \hspace
+                                #1.7
+                            \tiny
+                                -14
+                            \hspace
+                                #1.7
+                            \tiny
+                                -12
+                        }
+                }
+            s4
+            \once \override NoteHead.color = #(x11-color 'red)
             d,4
-            r4
-            r4
+            s4
+            s4
         }
     >>
+} %! abjad.LilyPondFile._get_formatted_blocks()
+
+\layout { %! abjad.LilyPondFile._get_formatted_blocks()
+    \context {
+        \Score
+        \override SpacingSpanner.base-shortest-duration = #(ly:make-moment 1 12)
+    }
 } %! abjad.LilyPondFile._get_formatted_blocks()

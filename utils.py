@@ -9,6 +9,8 @@ from matplotlib.legend_handler import HandlerPatch
 import matplotlib.patches as mpatches
 import math
 
+import matplotlib.colors
+
 def make_legend_arrow(legend, orig_handle,
                       xdescent, ydescent,
                       width, height, fontsize):
@@ -58,7 +60,14 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
     else:
         return fracs
 
-def make_plot(pts, primes, path, octaves = None, draw_points = None, oct_generalized = False):
+def make_plot(pts, primes, path, octaves = None, draw_points = None, 
+              oct_generalized = False, dot_size=1, colors=None, ratios=True,
+              origin=False):
+    c = matplotlib.colors.get_named_colors_mapping()
+    if np.all(colors == None):
+        colors = ['black' for i in range(len(pts))]
+    else:
+        colors = [c[i.lower()] for i in colors]
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
     if np.all(draw_points == None):
@@ -69,16 +78,44 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None, oct_general
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
     xyz = [pts[:, 0], pts[:, 1], pts[:, 2]]
-    ax.scatter(*xyz, color='black', depthshade=False, s=60)
     for i, pt in enumerate(pts):
-        ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
-                horizontalalignment='right', size='large')
+        ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
+                   s=int(60 * dot_size))
+    # ax.scatter(*xyz, color=colors, depthshade=False, s=int(60 * dot_size))
+    if ratios == True:
+        for i, pt in enumerate(pts):
+            ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
+                    horizontalalignment='right', size='large')
     for seg in segments:
-        ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5)
+        ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5*dot_size)
 
     ax.set_axis_off()
     max = np.max(pts)
     min = np.min(pts)
+    
+    
+    
+    if origin == True:
+        quiver_min = -2
+        quiver_max = 3
+        q_diff = quiver_max - quiver_min
+        if max < quiver_max:
+            max = quiver_max
+        if min > quiver_min:
+            min = quiver_min
+        x, y, z = np.array([[quiver_min, 0, 0],[0, quiver_min, 0],[0, 0, quiver_min]])
+        u, v, w = np.array([[q_diff, 0, 0],[0, q_diff, 0],[0, 0, q_diff]])
+        ax.quiver(x, y, z, u, v, w, arrow_length_ratio=0.1, color="black")
+        for tick in range(quiver_min+1, quiver_max):
+            a = [-0.0625, 0.0625]
+            b = [0, 0]
+            c = [tick, tick]
+            ax.plot(a, b, c, color='black')
+            ax.plot(b, a, c, color='black')
+            ax.plot(a, c, b, color='black')
+            ax.plot(c, a, b, color='black')
+            ax.plot(b, c, a, color='black')
+            ax.plot(c, b, a, color='black')
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
@@ -95,9 +132,9 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None, oct_general
     ax.add_artist(z_arrow)
     ratios = primes * (2.0 ** octaves)
 
-    ax.text(0.25, 0, 0, Fraction(ratios[0]), color='black', size='large')
-    ax.text(0, 0.5, -0.03, Fraction(ratios[1]), color='black', size='large')
-    ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size='large')
+    ax.text(0.25, 0, 0, Fraction(ratios[0]), color='black', size=4 * dot_size)
+    ax.text(0, 0.5, -0.03, Fraction(ratios[1]), color='black', size=4 * dot_size)
+    z = ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size=4 * dot_size)
     ax.set_axis_off()
     plt.savefig(path + '_legend.pdf')
     

@@ -23,14 +23,12 @@
             c'4
             s4
             \once \override NoteHead.color = #(x11-color 'MediumSeaGreen)
-            ef''4
+            ef'4
             s4
             \once \override NoteHead.color = #(x11-color 'DarkOrchid)
-            e'''4
-            \ottava 1
+            e'4
             \once \override NoteHead.color = #(x11-color 'RoyalBlue)
-            b''''4
-            \ottava 0
+            b'4
         }
         \new Staff
         \with
@@ -41,7 +39,7 @@
             \clef "bass"
             s4
             \once \override NoteHead.color = #(x11-color 'SaddleBrown)
-            f,4
+            f4
             ^ \markup {
                 \raise
                     #1.5
@@ -68,10 +66,8 @@
                         }
                 }
             s4
-            \ottava -1
             \once \override NoteHead.color = #(x11-color 'red)
-            d,,4
-            \ottava 0
+            d4
             s4
             s4
         }
