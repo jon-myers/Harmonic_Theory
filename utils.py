@@ -148,3 +148,9 @@ def cartesian_product(*arrays):
     for i, a in enumerate(np.ix_(*arrays)):
         arr[...,i] = a
     return arr.reshape(-1, la)
+
+def sub_branches(points):
+    size = len(points) - 1
+    while True:
+        potential_indexes = itertools.combinations(range(len(points)), size)
+        
