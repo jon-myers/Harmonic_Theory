@@ -8,7 +8,6 @@ from mpl_toolkits.mplot3d import proj3d
 from matplotlib.legend_handler import HandlerPatch
 import matplotlib.patches as mpatches
 import math
-
 import matplotlib.colors
 
 def make_legend_arrow(legend, orig_handle,
@@ -91,7 +90,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             min = quiver_min
         x, y, z = np.array([[quiver_min, 0, 0],[0, quiver_min, 0],[0, 0, quiver_min]])
         u, v, w = np.array([[q_diff, 0, 0],[0, q_diff, 0],[0, 0, q_diff]])
-        ax.quiver(x, y, z, u, v, w, arrow_length_ratio=0.1, color="black")
+        ax.quiver(x, y, z, u, v, w, arrow_length_ratio=0.1, color="black", zorder=-1)
         for tick in range(quiver_min+1, quiver_max):
             a = [-0.0625, 0.0625]
             b = [0, 0]
