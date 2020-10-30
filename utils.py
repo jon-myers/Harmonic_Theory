@@ -44,7 +44,6 @@ def get_segments(pts):
 def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True):
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
-    print(primes * (2.0**octaves))
     prods = np.product((primes * (2.0**octaves)) ** pts, axis=1)
     fracs = [Fraction(i).limit_denominator(1000) for i in prods]
     if oct_generalized == True:
@@ -61,7 +60,7 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
 
 def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
-              origin=False):
+              origin=False, origin_range = [-2, 3], get_ax=False):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -81,8 +80,8 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     min = np.min(pts)
 
     if origin == True:
-        quiver_min = -2
-        quiver_max = 3
+        quiver_min = origin_range[0]
+        quiver_max = origin_range[1]
         q_diff = quiver_max - quiver_min
         if max < quiver_max:
             max = quiver_max
@@ -146,11 +145,51 @@ def cartesian_product(*arrays):
     dtype = np.result_type(*arrays)
     arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
     for i, a in enumerate(np.ix_(*arrays)):
-        arr[...,i] = a
+        arr[..., i] = a
     return arr.reshape(-1, la)
+    
+def is_fully_connected(points):
+    """Returns True if all points are exactly one unit away from at least one 
+    other point; else returns False"""
+    full_truth = []
+    for point in points:
+        other_points = points[np.invert((points == point).all(axis=1))]
+        truth_array = []
+        for op in other_points:
+            one = np.count_nonzero(np.abs(point - op) == 1) == 1
+            zero = np.count_nonzero(point - op == 0) == 2
+            truth = one and zero
+            truth_array.append(truth)
+        full_truth.append(np.any(truth_array))
+    return np.all(full_truth)
+
 
 def sub_branches(points):
-    size = len(points) - 1
+    out = []
+    size = len(points)
     while True:
-        potential_indexes = itertools.combinations(range(len(points)), size)
-        
+        potential_indexes = np.array([i for i in itertools.combinations(range(len(points)), size)])
+        for pi in potential_indexes:
+            if is_fully_connected(points[pi]):
+                out.append(pi)
+        size -= 1
+        if size == 1:
+            break
+    return [points[i] for i in out]
+    
+def is_contained_by(point, container):
+    """Returns True if point is contained by container"""
+    return np.all(point - container >= 0)
+    
+def are_roots(points):
+    """Returns an array of boolean values assessing if each point is a root by
+    testing if each point is contained by any of the other points."""
+    out = []
+    for point in points:
+        other_points = points[np.invert((points == point).all(axis=1))]
+        truth_array = []
+        for op in other_points:
+            truth_array.append(is_contained_by(point, op))
+        out.append(not np.any(np.array(truth_array)))
+    return np.array(out)
+    

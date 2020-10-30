@@ -1,6 +1,6 @@
 import numpy as np
 import os,sys,inspect, abjad
-import more_itertools
+import more_itertools, itertools
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
@@ -13,11 +13,19 @@ A = np.array((
 (0, 1, 0),
 (1, 1, 0),
 (2, 1, 0),
-(1, 1, 1)
+(1, 1, 1),
+(2, 1, 1)
 ))
 
+c = [np.array(list(i)) for i in itertools.permutations((0, 1, 2))]
+
+print(c)
+print(A[:, c[1]])
+# print(np.transpose(A, axes = (c[0])))
 primes = np.array((2, 3, 5))
 colors = ['red', 'black', 'black', 'black', 'black']
+
+
 
 make_plot(A, primes, currentdir + '/A', ratios=False, origin=True, 
 dot_size=2, colors = colors)
