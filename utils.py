@@ -60,7 +60,8 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
 
 def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
-              origin=False, origin_range = [-2, 3], get_ax=False):
+              origin=False, origin_range = [-2, 3], get_ax=False, legend=True, 
+              range_override=[0, 0], transparent=False):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -76,8 +77,14 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
     ax.set_axis_off()
-    max = np.max(pts)
+    
     min = np.min(pts)
+    if min < range_override[0]:
+        min = range_override[0]
+    max = np.max(pts)
+    if max > range_override[1]:
+        max = range_override[1]
+    
 
     if origin == True:
         quiver_min = origin_range[0]
@@ -113,31 +120,30 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     for seg in segments:
         ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5*dot_size)
 
-
-
-
-
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
-    plt.savefig(path + '.pdf')
+    plt.savefig(path + '.pdf', transparent=transparent)
     plt.close(fig)
+    
+    if legend == True:
 
-    fig = plt.figure(figsize=[8, 6])
-    ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
-    x_arrow = Arrow3D([-.005, 0.25], [0, 0], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
-    y_arrow = Arrow3D([0, 0], [-0.01, 0.5], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
-    z_arrow = Arrow3D([0, 0], [0, 0], [-0.01, 0.35], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
-    ax.add_artist(x_arrow)
-    ax.add_artist(y_arrow)
-    ax.add_artist(z_arrow)
-    ratios = primes * (2.0 ** octaves)
+        fig = plt.figure(figsize=[8, 6])
+        ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+        x_arrow = Arrow3D([-.005, 0.25], [0, 0], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
+        y_arrow = Arrow3D([0, 0], [-0.01, 0.5], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
+        z_arrow = Arrow3D([0, 0], [0, 0], [-0.01, 0.35], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
+        ax.add_artist(x_arrow)
+        ax.add_artist(y_arrow)
+        ax.add_artist(z_arrow)
+        ratios = primes * (2.0 ** octaves)
 
-    ax.text(0.25, 0, 0, Fraction(ratios[0]), color='black', size=4 * dot_size)
-    ax.text(0, 0.5, -0.03, Fraction(ratios[1]), color='black', size=4 * dot_size)
-    z = ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size=4 * dot_size)
-    ax.set_axis_off()
-    plt.savefig(path + '_legend.pdf')
+        ax.text(0.25, 0, 0, Fraction(ratios[0]), color='black', size=4 * dot_size)
+        ax.text(0, 0.5, -0.03, Fraction(ratios[1]), color='black', size=4 * dot_size)
+        z = ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size=4 * dot_size)
+        ax.set_axis_off()
+        plt.savefig(path + '_legend.pdf', transparent=transparent)
+        plt.close()
 
 
 def cartesian_product(*arrays):

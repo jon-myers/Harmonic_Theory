@@ -19,13 +19,12 @@ A = np.array((
 
 c = [np.array(list(i)) for i in itertools.permutations((0, 1, 2))]
 
-print(c)
-print(A[:, c[1]])
-# print(np.transpose(A, axes = (c[0])))
 primes = np.array((2, 3, 5))
-colors = ['red', 'black', 'black', 'black', 'black']
+colors = ['red', 'black', 'black', 'black', 'black', 'black']
 
 
-
-make_plot(A, primes, currentdir + '/A', ratios=False, origin=True, 
-dot_size=2, colors = colors)
+for i in range(6):
+    make_plot(A[:, c[i]], primes, currentdir + '/' + str(i), ratios=False, 
+              origin=False, dot_size=4, colors=colors, legend=False, 
+              range_override=[-2, 3], transparent=True)
+              
