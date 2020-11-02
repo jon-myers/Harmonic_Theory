@@ -147,9 +147,9 @@ def cartesian_product(*arrays):
     for i, a in enumerate(np.ix_(*arrays)):
         arr[..., i] = a
     return arr.reshape(-1, la)
-    
+
 def is_fully_connected(points):
-    """Returns True if all points are exactly one unit away from at least one 
+    """Returns True if all points are exactly one unit away from at least one
     other point; else returns False"""
     full_truth = []
     for point in points:
@@ -165,6 +165,8 @@ def is_fully_connected(points):
 
 
 def sub_branches(points):
+    """Given the points that make up a chord, returns the list of all subsets of
+    those points that form branches."""
     out = []
     size = len(points)
     while True:
@@ -176,11 +178,22 @@ def sub_branches(points):
         if size == 1:
             break
     return [points[i] for i in out]
-    
+
+def get_transposition_shell(points):
+    """Given the points that make up a branch rooted at the origin, returns the
+    points that make up its rotation shell."""
+    dims = np.shape(points)[-1]
+    permutations = np.array([i for i in itertools.permutations(range(dims))])
+    perms = points[:, permutations]
+    transpositions = perms.transpose((1, 0, *range(2, len(np.shape(perms)))))
+    all_points = np.concatenate(transpositions)
+    unique = np.unique(all_points, axis=0)
+    return unique
+
 def is_contained_by(point, container):
     """Returns True if point is contained by container"""
     return np.all(point - container >= 0)
-    
+
 def are_roots(points):
     """Returns an array of boolean values assessing if each point is a root by
     testing if each point is contained by any of the other points."""
@@ -192,4 +205,3 @@ def are_roots(points):
             truth_array.append(is_contained_by(point, op))
         out.append(not np.any(np.array(truth_array)))
     return np.array(out)
-    
