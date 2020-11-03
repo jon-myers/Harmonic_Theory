@@ -60,8 +60,8 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
 
 def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
-              origin=False, origin_range = [-2, 3], get_ax=False, legend=True, 
-              range_override=[0, 0], transparent=False):
+              origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
+              range_override=[0, 0], transparent=False, connect_color='grey'):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -77,14 +77,14 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
     ax.set_axis_off()
-    
+
     min = np.min(pts)
-    if min < range_override[0]:
+    if min > range_override[0]:
         min = range_override[0]
     max = np.max(pts)
-    if max > range_override[1]:
+    if max < range_override[1]:
         max = range_override[1]
-    
+
 
     if origin == True:
         quiver_min = origin_range[0]
@@ -118,14 +118,14 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
                     horizontalalignment='right', size='large')
     for seg in segments:
-        ax.plot(seg[0], seg[1], seg[2], color='grey', alpha=0.5, lw=0.5*dot_size)
+        ax.plot(seg[0], seg[1], seg[2], color=connect_color, alpha=0.5, lw=0.5*dot_size)
 
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
     plt.savefig(path + '.pdf', transparent=transparent)
     plt.close(fig)
-    
+
     if legend == True:
 
         fig = plt.figure(figsize=[8, 6])
@@ -145,6 +145,85 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
         plt.savefig(path + '_legend.pdf', transparent=transparent)
         plt.close()
 
+
+
+
+def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None,
+              oct_generalized = False, dot_size=1, colors=None, ratios=True,
+              origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
+              range_override=[0, 0], transparent=False, shell_color='lightgrey',
+              point_color='black'):
+    c = matplotlib.colors.get_named_colors_mapping()
+    if np.all(colors == None):
+        colors = ['black' for i in range(len(pts))]
+    else:
+        colors = [c[i.lower()] for i in colors]
+    if np.all(octaves == None):
+        octaves = np.repeat(0, len(primes))
+    if np.all(draw_points == None):
+        point_segments = get_segments(pts)
+        shell_segments = get_segments(shell)
+    else:
+        point_segments = get_segments(np.concatenate((pts, draw_points)))
+        shell_segments = get_segments(shell)
+    ratios = get_ratios(pts, primes, octaves, oct_generalized)
+    fig = plt.figure(figsize=[8, 6])
+    ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+    ax.set_axis_off()
+
+    min = np.min(shell)
+    if min > range_override[0]:
+        min = range_override[0]
+    max = np.max(shell)
+    if max < range_override[1]:
+        max = range_override[1]
+
+
+    if origin == True:
+        quiver_min = origin_range[0]
+        quiver_max = origin_range[1]
+        q_diff = quiver_max - quiver_min
+        if max < quiver_max:
+            max = quiver_max
+        if min > quiver_min:
+            min = quiver_min
+        x, y, z = np.array([[quiver_min, 0, 0],[0, quiver_min, 0],[0, 0, quiver_min]])
+        u, v, w = np.array([[q_diff, 0, 0],[0, q_diff, 0],[0, 0, q_diff]])
+        ax.quiver(x, y, z, u, v, w, arrow_length_ratio=0.1, color="black", zorder=-1)
+        for tick in range(quiver_min+1, quiver_max):
+            a = [-0.0625, 0.0625]
+            b = [0, 0]
+            c = [tick, tick]
+            ax.plot(a, b, c, color='black')
+            ax.plot(b, a, c, color='black')
+            ax.plot(a, c, b, color='black')
+            ax.plot(c, a, b, color='black')
+            ax.plot(b, c, a, color='black')
+            ax.plot(c, b, a, color='black')
+
+    for i, pt in enumerate(shell):
+        ax.scatter(pt[0], pt[1], pt[2], color=c[shell_color], depthshade=False,
+                   s=int(60 * dot_size))
+    for seg in shell_segments:
+        ax.plot(seg[0], seg[1], seg[2], color=c[shell_color], alpha=0.5, lw=0.5*dot_size)
+
+    for i, pt in enumerate(pts):
+        ax.scatter(pt[0], pt[1], pt[2], color=c[point_color], depthshade=False,
+                   s=int(60 * dot_size))
+    for seg in point_segments:
+        ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=0.5*dot_size)
+
+    if ratios == True:
+        for i, pt in enumerate(pts):
+            ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
+                    horizontalalignment='right', size='large')
+
+
+    ax.set_xlim3d([min, max])
+    ax.set_ylim3d([min, max])
+    ax.set_zlim3d([min, max])
+    plt.savefig(path + '.pdf', transparent=transparent)
+    plt.close(fig)
 
 def cartesian_product(*arrays):
     la = len(arrays)
