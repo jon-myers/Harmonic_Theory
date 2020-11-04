@@ -49,7 +49,6 @@ shell_C = get_transposition_shell(points_C)
 shell_D = get_transposition_shell(points_D)
 
 primes = np.array((2, 3, 5))
-choices = ['black', 'red']
 
 make_shell_plot(shell_A, points_A, primes, currentdir+ '/A', dot_size=4, transparent=True, shell_color='seagreen')
 make_shell_plot(shell_B, points_B, primes, currentdir+ '/B', dot_size=4, transparent=True, shell_color='seagreen')

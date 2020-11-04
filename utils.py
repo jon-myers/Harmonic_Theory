@@ -212,7 +212,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
             ax.scatter(pt[0], pt[1], pt[2], color='red', depthshade=False,
                        s=int(60 * dot_size))
         else:
-            ax.scatter(pt[0], pt[1], pt[2], color=c[point_color], 
+            ax.scatter(pt[0], pt[1], pt[2], color=c[point_color],
                        depthshade=False, s=int(60 * dot_size))
     for seg in point_segments:
         ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=0.5*dot_size)
@@ -279,6 +279,19 @@ def get_transposition_shell(points):
     unique = np.unique(all_points, axis=0)
     return unique
 
+def get_complement_shell(points):
+    """Given the points that make up a branch rooted at the origin, returns the
+    points that make up its complement shell."""
+    maxs = np.max(points, axis=0)
+    complement_shell = np.array(((0, 0, 0))).reshape((1, 3))
+    for point in points:
+        shell = [np.array([k for k in range(i + 1)]) for i in point]
+        shell = cartesian_product(*shell)
+        complement_shell = np.concatenate((complement_shell, shell), axis=0)
+    complement_shell = np.unique(complement_shell, axis=0)
+    return complement_shell
+
+
 def is_contained_by(point, container):
     """Returns True if point is contained by container"""
     return np.all(point - container >= 0)
@@ -297,10 +310,10 @@ def are_roots(points):
 
 def unique_permutations(arr):
     return np.array(list(set(itertools.permutations(arr))))
-    
+
 def paths_to_point(point, root = [0, 0, 0]):
-    """Returns a list of sets of points outlining each of the possible paths 
-    between root and point."""
+    """Returns a list of sets of points outlining each of the possible paths
+    between root and point. (Currently only for 3D)"""
     point = np.array(point)
     root = np.array(root)
     point = point - root
@@ -308,9 +321,9 @@ def paths_to_point(point, root = [0, 0, 0]):
     increments_0 = np.repeat(0, point[0])
     increments_1 = np.repeat(1, point[1])
     increments_2 = np.repeat(2, point[2])
-    increments = np.hstack((increments_0, increments_1, increments_2))   
+    increments = np.hstack((increments_0, increments_1, increments_2))
     inc_paths = unique_permutations(increments)
-    paths = [] 
+    paths = []
     for ip in inc_paths:
         path = np.zeros((len(ip) + 1, 3), dtype = int)
         for i, item in enumerate(ip):
@@ -319,4 +332,3 @@ def paths_to_point(point, root = [0, 0, 0]):
         paths.append(path)
     paths = np.array(paths)
     return paths
-    
