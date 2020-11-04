@@ -27,10 +27,10 @@ points_B = np.array((
 points_C = np.array((
 (0, 0, 0),
 (0, 0, 1),
-(1, 0, 1),
-(1, 1, 1),
 (0, 1, 1),
-(2, 1, 0)
+(1, 1, 1),
+(1, 0, 1),
+(2, 0, 1)
 ))
 
 points_D = np.array((
@@ -51,10 +51,10 @@ shell_D = get_transposition_shell(points_D)
 primes = np.array((2, 3, 5))
 choices = ['black', 'red']
 
-make_shell_plot(shell_A, points_A, primes, currentdir+ '/A', dot_size=3)
-make_shell_plot(shell_B, points_B, primes, currentdir+ '/B', dot_size=3)
-make_shell_plot(shell_C, points_C, primes, currentdir+ '/C', dot_size=3)
-make_shell_plot(shell_D, points_D, primes, currentdir+ '/D', dot_size=3)
+make_shell_plot(shell_A, points_A, primes, currentdir+ '/A', dot_size=4, transparent=True, shell_color='seagreen')
+make_shell_plot(shell_B, points_B, primes, currentdir+ '/B', dot_size=4, transparent=True, shell_color='seagreen')
+make_shell_plot(shell_C, points_C, primes, currentdir+ '/C', dot_size=4, transparent=True, shell_color='seagreen')
+make_shell_plot(shell_D, points_D, primes, currentdir+ '/D', dot_size=4, transparent=True, shell_color='seagreen')
 
 #
 # colors = [choices[int(i)] for i in are_roots(points)]
