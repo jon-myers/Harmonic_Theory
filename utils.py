@@ -61,7 +61,8 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
 def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
-              range_override=[0, 0], transparent=False, connect_color='grey'):
+              range_override=[0, 0], transparent=False, connect_color='grey',
+              draw_point_visible=False, draw_color='seagreen'):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -113,6 +114,11 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
         ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
                    s=int(60 * dot_size))
     # ax.scatter(*xyz, color=colors, depthshade=False, s=int(60 * dot_size))
+    if draw_point_visible==True:
+        # print(draw_points)
+        for i, pt in enumerate(draw_points):
+            ax.scatter(pt[0], pt[1], pt[2], color=c[draw_color],
+                       depthshade=False, s=int(60 * dot_size))
     if ratios == True:
         for i, pt in enumerate(pts):
             ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
@@ -152,7 +158,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, shell_color='grey',
-              point_color='black'):
+              point_color='black', draw_point_visible=False):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -214,6 +220,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
         else:
             ax.scatter(pt[0], pt[1], pt[2], color=c[point_color],
                        depthshade=False, s=int(60 * dot_size))
+    
     for seg in point_segments:
         ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=0.5*dot_size)
 
