@@ -220,7 +220,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
         else:
             ax.scatter(pt[0], pt[1], pt[2], color=c[point_color],
                        depthshade=False, s=int(60 * dot_size))
-    
+
     for seg in point_segments:
         ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=0.5*dot_size)
 
@@ -339,3 +339,18 @@ def paths_to_point(point, root = [0, 0, 0]):
         paths.append(path)
     paths = np.array(paths)
     return paths
+
+def cast_to_ordinal(points):
+    """Given a list of harmonic space vectors, returns the collection cast to
+    ordinal position. That is, with dimensions sorted firstly by max extent from
+    origin, and secondly by average extent in each dimension, and thirdly by
+    (well, nothing yet, but may have to think of more discriminators ...)"""
+
+    mins = np.min(points, axis=0)
+    points = points - mins
+    avg_order = np.argsort(-1 * np.average(points, axis=0))
+    points = points[:, avg_order]
+    max_order = np.argsort(np.max(points) - np.max(points, axis=0))
+    points = points[:, max_order]
+
+    return points
