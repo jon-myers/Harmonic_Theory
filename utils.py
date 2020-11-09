@@ -1,6 +1,7 @@
 import itertools
 from fractions import Fraction
 import numpy as np
+import numpy_indexed as npi
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits import mplot3d
@@ -292,6 +293,19 @@ def get_transpositions(points):
     perms = points[:, permutations]
     transpositions = perms.transpose((1, 0, *range(2, len(np.shape(perms)))))
     return transpositions
+    
+def get_stability(points):
+        """The average of the proportion of rotations in which each unique
+        position is occupied"""
+        rots = get_transpositions(points)
+        shape = np.shape(rots)
+        pos_in_rots = np.unique(rots, axis=1)
+        pos_tot = npi.union(*[i for i in rots])
+        all_pos_occurences = pos_in_rots.reshape((np.int(np.size(pos_in_rots) / 3), 3))
+        pos_tot, counts = np.unique(all_pos_occurences, axis=0, return_counts=True)
+        out = np.round(np.mean(counts) / 6, 2)
+        return out
+
 
 
 def get_complement_shell(points):
