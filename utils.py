@@ -286,6 +286,14 @@ def get_transposition_shell(points):
     unique = np.unique(all_points, axis=0)
     return unique
 
+def get_transpositions(points):
+    dims = np.shape(points)[-1]
+    permutations = np.array([i for i in itertools.permutations(range(dims))])
+    perms = points[:, permutations]
+    transpositions = perms.transpose((1, 0, *range(2, len(np.shape(perms)))))
+    return transpositions
+
+
 def get_complement_shell(points):
     """Given the points that make up a branch rooted at the origin, returns the
     points that make up its complement shell."""
