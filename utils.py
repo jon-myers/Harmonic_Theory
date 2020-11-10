@@ -63,7 +63,8 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, connect_color='grey',
-              draw_point_visible=False, draw_color='seagreen'):
+              draw_point_visible=False, draw_color='seagreen', connect_size=1,
+              file_type='pdf', opacity=0.5):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -114,9 +115,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     for i, pt in enumerate(pts):
         ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
                    s=int(60 * dot_size))
-    # ax.scatter(*xyz, color=colors, depthshade=False, s=int(60 * dot_size))
     if draw_point_visible==True:
-        # print(draw_points)
         for i, pt in enumerate(draw_points):
             ax.scatter(pt[0], pt[1], pt[2], color=c[draw_color],
                        depthshade=False, s=int(60 * dot_size))
@@ -125,12 +124,12 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             ax.text(pt[0] - 0.15, pt[1] + 0.25, pt[2], ratios[i], c='black',
                     horizontalalignment='right', size='large')
     for seg in segments:
-        ax.plot(seg[0], seg[1], seg[2], color=connect_color, alpha=0.5, lw=0.5*dot_size)
+        ax.plot(seg[0], seg[1], seg[2], color=connect_color, alpha=opacity, lw=connect_size)
 
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
-    plt.savefig(path + '.pdf', transparent=transparent)
+    plt.savefig(path + '.' + file_type, transparent=transparent)
     plt.close(fig)
 
     if legend == True:
@@ -149,7 +148,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
         ax.text(0, 0.5, -0.03, Fraction(ratios[1]), color='black', size=4 * dot_size)
         z = ax.text(0.03, 0, 0.3, Fraction(ratios[2]), color='black', size=4 * dot_size)
         ax.set_axis_off()
-        plt.savefig(path + '_legend.pdf', transparent=transparent)
+        plt.savefig(path + '_legend.' + file_type, transparent=transparent)
         plt.close()
 
 
@@ -159,7 +158,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, shell_color='grey',
-              point_color='black', draw_point_visible=False):
+              point_color='black', draw_point_visible=False, connect_size=1):
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -212,7 +211,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
         ax.scatter(pt[0], pt[1], pt[2], color=c[shell_color], depthshade=False,
                    s=int(60 * dot_size))
     for seg in shell_segments:
-        ax.plot(seg[0], seg[1], seg[2], color=c[shell_color], alpha=0.5, lw=0.5*dot_size)
+        ax.plot(seg[0], seg[1], seg[2], color=c[shell_color], alpha=0.5, lw=connect_size)
 
     for i, pt in enumerate(pts):
         if i == 0:
@@ -223,7 +222,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
                        depthshade=False, s=int(60 * dot_size))
 
     for seg in point_segments:
-        ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=0.5*dot_size)
+        ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=10)
 
     if ratios == True:
         for i, pt in enumerate(pts):
@@ -293,7 +292,7 @@ def get_transpositions(points):
     perms = points[:, permutations]
     transpositions = perms.transpose((1, 0, *range(2, len(np.shape(perms)))))
     return transpositions
-    
+
 def get_stability(points):
         """The average of the proportion of rotations in which each unique
         position is occupied"""

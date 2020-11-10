@@ -6,9 +6,8 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 from utils import make_plot, get_transpositions, are_roots, cast_to_ordinal, get_stability
 
-
 primes = np.array((2, 3, 5))
-with open('branches/branches2.json') as json_file:
+with open('branches/branches3.json') as json_file:
     branches = json.load(json_file)
     branch_array = []
     for b in branches:
@@ -22,5 +21,4 @@ with open('branches/branches2.json') as json_file:
         print(vals[sorts[i]])
         make_plot(branch, primes, currentdir + '/' + str(i), dot_size=5,
                   legend=False, ratios=False, origin=False, transparent=True,
-                  connect_color='black', colors=colors, range_override=[0, 2])
-        
+                  connect_color='black', colors=colors, range_override=[0, 3])
