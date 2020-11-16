@@ -37,9 +37,10 @@ def hz_to_cents(hz, root):
 def get_segments(pts):
     combs = list(itertools.combinations(range(len(pts)), 2))
     segments = np.array([(pts[i[0]], pts[i[1]]) for i in combs])
-    is_neighbor = np.sum(np.abs(segments[:, 0] - segments[:, 1]), axis=1) == 1
-    segments = segments[is_neighbor]
-    segments = np.transpose(segments, axes=(0, 2, 1))
+    if len(segments) > 0:
+        is_neighbor = np.sum(np.abs(segments[:, 0] - segments[:, 1]), axis=1) == 1
+        segments = segments[is_neighbor]
+        segments = np.transpose(segments, axes=(0, 2, 1))
     return segments
 
 def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True):
@@ -64,7 +65,22 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
-              file_type='pdf', opacity=0.5):
+              file_type='pdf', opacity=0.5, root_layout=False):
+              
+    # if root_layout == True:
+    #     rl_draw_points = []
+    #     for point in pts:
+    #         for i in range(len(point)):
+    #             if point[i] > 0:
+    #                 ct = point[i]
+    #                 for j in range(ct)[::-1]:
+    # 
+    #                     alt_point = np.copy(point)
+    #                     alt_point[i] = j
+    #                     rl_draw_points.append(alt_point)
+    # 
+    
+                    
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -73,9 +89,16 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
     if np.all(draw_points == None):
+        # if root_layout == True and len(rl_draw_points) > 0:
+        #     segments = get_segments(np.concatenate((pts, rl_draw_points)))
+        # else: 
         segments = get_segments(pts)
     else:
+        # if root_layout == True and len(rl_draw_points) > 0:
+        #     segments = get_segments(np.concatenate((pts, draw_points, rl_draw_points)))
+        # else:
         segments = get_segments(np.concatenate((pts, draw_points)))
+        
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
@@ -110,7 +133,15 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             ax.plot(c, a, b, color='black')
             ax.plot(b, c, a, color='black')
             ax.plot(c, b, a, color='black')
-
+    
+    
+    if root_layout == True:
+        for pt in pts:
+            ax.plot([0, pt[0]], [0, pt[1]], [0, pt[2]], color='green')  
+            ax.plot([pt[0], pt[0]], [0, pt[1]], [0, pt[2]], color='green')
+            ax.plot([0, pt[0]], [pt[1], pt[1]], [0, pt[2]], color='green')
+            ax.plot([0, pt[0]], [0, pt[1]], [pt[2], pt[2]], color='green') 
+    
     xyz = [pts[:, 0], pts[:, 1], pts[:, 2]]
     for i, pt in enumerate(pts):
         ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
@@ -158,8 +189,11 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, shell_color='grey',
-              point_color='black', draw_point_visible=False, connect_size=1):
-    c = matplotlib.colors.get_named_colors_mapping()
+              point_color='black', draw_point_visible=False, connect_size=1, 
+              shell_dot_size=None, angles=True):
+    if shell_dot_size == None: 
+        shell_dot_size = dot_size
+    c_ = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
     else:
@@ -174,7 +208,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
         shell_segments = get_segments(shell)
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
-    ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+    ax = mplot3d.Axes3D(fig, elev=13, azim=-52)
     ax.set_axis_off()
 
     min = np.min(shell)
@@ -206,23 +240,33 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
             ax.plot(c, a, b, color='black')
             ax.plot(b, c, a, color='black')
             ax.plot(c, b, a, color='black')
+            
+    if angles == True and len(pts) > 1:
+        combs = [i for i in itertools.combinations(range(len(pts)), 2)]
+        for i, indices in enumerate(combs):
+            arc = draw_arc(pts[indices[0]], pts[indices[1]], 0.2 + 0.05 *i)
+            ax.scatter(arc[:,0], arc[:, 1], arc[:, 2], color='green', s=1)
+        for pt in pts:
+            ax.plot([0, pt[0]], [0, pt[1]], [0, pt[2]], color='blue', lw=connect_size)
 
     for i, pt in enumerate(shell):
-        ax.scatter(pt[0], pt[1], pt[2], color=c[shell_color], depthshade=False,
-                   s=int(60 * dot_size))
+
+        ax.scatter(pt[0], pt[1], pt[2], color=c_[shell_color], depthshade=False,
+                   s=int(60 * shell_dot_size))
     for seg in shell_segments:
-        ax.plot(seg[0], seg[1], seg[2], color=c[shell_color], alpha=0.5, lw=connect_size)
+        ax.plot(seg[0], seg[1], seg[2], color=c_[shell_color], alpha=0.5, lw=connect_size)
 
     for i, pt in enumerate(pts):
         if i == 0:
-            ax.scatter(pt[0], pt[1], pt[2], color='red', depthshade=False,
+            # spreviously color here was hard coded to red
+            ax.scatter(pt[0], pt[1], pt[2], color=c_[point_color], depthshade=False,
                        s=int(60 * dot_size))
         else:
-            ax.scatter(pt[0], pt[1], pt[2], color=c[point_color],
+            ax.scatter(pt[0], pt[1], pt[2], color=c_[point_color],
                        depthshade=False, s=int(60 * dot_size))
 
     for seg in point_segments:
-        ax.plot(seg[0], seg[1], seg[2], color=c[point_color], alpha=0.5, lw=10)
+        ax.plot(seg[0], seg[1], seg[2], color=c_[point_color], alpha=0.5, lw=10)
 
     if ratios == True:
         for i, pt in enumerate(pts):
@@ -335,7 +379,19 @@ def are_roots(points):
             truth_array.append(is_contained_by(point, op))
         out.append(not np.any(np.array(truth_array)))
     return np.array(out)
-
+    
+def are_extremities(poitns):
+    """Returns an array of boolean values assessing if each point is an 
+    extremity by testing if each point contains any other points."""
+    out = []
+    for point in points:
+        other_points = points[np.invert((points == point).all(axis=1))]
+        truth_array = []
+        for op in other_points:
+            truth_array.append(is_contained_by(op, point))
+        out.append(not np.any(np.array(truth_array)))
+    return np.array(out)
+        
 def unique_permutations(arr):
     return np.array(list(set(itertools.permutations(arr))))
 
@@ -375,3 +431,18 @@ def cast_to_ordinal(points):
     points = points[:, max_order]
 
     return points
+    
+def draw_arc(A, B, r = 0.25):
+    A = np.where(A != 0, A / np.linalg.norm(A), A)
+    B = np.where(B != 0, B / np.linalg.norm(B), B)
+    crossed = np.cross(A, B)
+    B_alt = np.cross(crossed, A)
+    
+    B_alt = np.where(B_alt != 0, B_alt / np.linalg.norm(B_alt), B_alt)
+    theta_limit = np.arccos(np.dot(A, B))
+
+
+    theta = np.repeat(np.linspace(0, theta_limit, 100), 3).reshape((100, 3))
+    return r * (np.cos(theta) * A + np.sin(theta) * B)
+    
+    
