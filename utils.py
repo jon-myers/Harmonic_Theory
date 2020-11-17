@@ -66,21 +66,8 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
               range_override=[0, 0], transparent=False, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
               file_type='pdf', opacity=0.5, root_layout=False):
-              
-    # if root_layout == True:
-    #     rl_draw_points = []
-    #     for point in pts:
-    #         for i in range(len(point)):
-    #             if point[i] > 0:
-    #                 ct = point[i]
-    #                 for j in range(ct)[::-1]:
-    # 
-    #                     alt_point = np.copy(point)
-    #                     alt_point[i] = j
-    #                     rl_draw_points.append(alt_point)
-    # 
-    
-                    
+
+
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
@@ -91,14 +78,14 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if np.all(draw_points == None):
         # if root_layout == True and len(rl_draw_points) > 0:
         #     segments = get_segments(np.concatenate((pts, rl_draw_points)))
-        # else: 
+        # else:
         segments = get_segments(pts)
     else:
         # if root_layout == True and len(rl_draw_points) > 0:
         #     segments = get_segments(np.concatenate((pts, draw_points, rl_draw_points)))
         # else:
         segments = get_segments(np.concatenate((pts, draw_points)))
-        
+
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
@@ -133,15 +120,15 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
             ax.plot(c, a, b, color='black')
             ax.plot(b, c, a, color='black')
             ax.plot(c, b, a, color='black')
-    
-    
+
+
     if root_layout == True:
         for pt in pts:
-            ax.plot([0, pt[0]], [0, pt[1]], [0, pt[2]], color='green')  
+            ax.plot([0, pt[0]], [0, pt[1]], [0, pt[2]], color='green')
             ax.plot([pt[0], pt[0]], [0, pt[1]], [0, pt[2]], color='green')
             ax.plot([0, pt[0]], [pt[1], pt[1]], [0, pt[2]], color='green')
-            ax.plot([0, pt[0]], [0, pt[1]], [pt[2], pt[2]], color='green') 
-    
+            ax.plot([0, pt[0]], [0, pt[1]], [pt[2], pt[2]], color='green')
+
     xyz = [pts[:, 0], pts[:, 1], pts[:, 2]]
     for i, pt in enumerate(pts):
         ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
@@ -189,9 +176,9 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, shell_color='grey',
-              point_color='black', draw_point_visible=False, connect_size=1, 
+              point_color='black', draw_point_visible=False, connect_size=1,
               shell_dot_size=None, angles=True):
-    if shell_dot_size == None: 
+    if shell_dot_size == None:
         shell_dot_size = dot_size
     c_ = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
@@ -240,7 +227,7 @@ def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None
             ax.plot(c, a, b, color='black')
             ax.plot(b, c, a, color='black')
             ax.plot(c, b, a, color='black')
-            
+
     if angles == True and len(pts) > 1:
         combs = [i for i in itertools.combinations(range(len(pts)), 2)]
         for i, indices in enumerate(combs):
@@ -379,9 +366,9 @@ def are_roots(points):
             truth_array.append(is_contained_by(point, op))
         out.append(not np.any(np.array(truth_array)))
     return np.array(out)
-    
+
 def are_extremities(poitns):
-    """Returns an array of boolean values assessing if each point is an 
+    """Returns an array of boolean values assessing if each point is an
     extremity by testing if each point contains any other points."""
     out = []
     for point in points:
@@ -391,7 +378,39 @@ def are_extremities(poitns):
             truth_array.append(is_contained_by(op, point))
         out.append(not np.any(np.array(truth_array)))
     return np.array(out)
-        
+
+def are_root_breakpoints(points):
+    """Returns an array of boolean values assessing if each point is a root
+    breakpoint by testing if it is contained by two roots, and is the simplest
+    point contained by those two roots"""
+    roots = points[are_roots(points)]
+    combs = itertools.combinations(range(len(roots)), 2)
+    out = np.zeros(len(points), dtype=bool)
+    for comb in combs:
+        potential_breakpoints = []
+        for point in points:
+            test_1 = is_contained_by(point, roots[comb[0]])
+            test_2 = is_contained_by(point, roots[comb[1]])
+            if test_1 and test_2:
+                potential_breakpoints.append(point)
+        potential_breakpoints = np.array(potential_breakpoints)
+        if len(potential_breakpoints) == 0:
+            break
+        elif len(potential_breakpoints) > 1:
+            sorts = np.argsort([sum(i) for i in potential_breakpoints])
+            breakpoint = potential_breakpoints[sorts][0]
+        elif len(potential_breakpoints) == 1:
+            breakpoint = potential_breakpoints[0]
+
+        for i, pt in enumerate(points):
+            if str(breakpoint) == str(pt):
+                out[i] = True
+    return out
+
+
+
+
+
 def unique_permutations(arr):
     return np.array(list(set(itertools.permutations(arr))))
 
@@ -431,18 +450,16 @@ def cast_to_ordinal(points):
     points = points[:, max_order]
 
     return points
-    
+
 def draw_arc(A, B, r = 0.25):
     A = np.where(A != 0, A / np.linalg.norm(A), A)
     B = np.where(B != 0, B / np.linalg.norm(B), B)
     crossed = np.cross(A, B)
     B_alt = np.cross(crossed, A)
-    
+
     B_alt = np.where(B_alt != 0, B_alt / np.linalg.norm(B_alt), B_alt)
     theta_limit = np.arccos(np.dot(A, B))
 
 
     theta = np.repeat(np.linspace(0, theta_limit, 100), 3).reshape((100, 3))
     return r * (np.cos(theta) * A + np.sin(theta) * B)
-    
-    
