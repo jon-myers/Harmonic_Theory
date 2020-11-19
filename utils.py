@@ -10,6 +10,9 @@ from matplotlib.legend_handler import HandlerPatch
 import matplotlib.patches as mpatches
 import math
 import matplotlib.colors
+import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+
 
 def make_legend_arrow(legend, orig_handle,
                       xdescent, ydescent,
@@ -359,6 +362,7 @@ def are_roots(points):
     """Returns an array of boolean values assessing if each point is a root by
     testing if each point is contained by any of the other points."""
     out = []
+    points = np.array(points)
     for point in points:
         other_points = points[np.invert((points == point).all(axis=1))]
         truth_array = []
@@ -367,7 +371,7 @@ def are_roots(points):
         out.append(not np.any(np.array(truth_array)))
     return np.array(out)
 
-def are_extremities(poitns):
+def are_extremities(points):
     """Returns an array of boolean values assessing if each point is an
     extremity by testing if each point contains any other points."""
     out = []
@@ -383,6 +387,7 @@ def are_root_breakpoints(points):
     """Returns an array of boolean values assessing if each point is a root
     breakpoint by testing if it is contained by two roots, and is the simplest
     point contained by those two roots"""
+    points = np.array(points)
     roots = points[are_roots(points)]
     combs = itertools.combinations(range(len(roots)), 2)
     out = np.zeros(len(points), dtype=bool)
@@ -394,22 +399,45 @@ def are_root_breakpoints(points):
             if test_1 and test_2:
                 potential_breakpoints.append(point)
         potential_breakpoints = np.array(potential_breakpoints)
-        if len(potential_breakpoints) == 0:
-            break
-        elif len(potential_breakpoints) > 1:
+        if len(potential_breakpoints) > 1:
             sorts = np.argsort([sum(i) for i in potential_breakpoints])
             breakpoint = potential_breakpoints[sorts][0]
         elif len(potential_breakpoints) == 1:
             breakpoint = potential_breakpoints[0]
-
+        elif len(potential_breakpoints) == 0:
+            breakpoint = None
         for i, pt in enumerate(points):
             if str(breakpoint) == str(pt):
                 out[i] = True
     return out
 
-
-
-
+def are_extremity_breakpoints(points): 
+    """Returns an array of boolean values assessing if each point is an extremity
+    breakpoint by testing if it contains by two extremities, and is the most complex
+    point that contains those two roots"""
+    points = np.array(points)
+    extremities = points[are_extremities(points)]
+    combs = itertools.combinations(range(len(extremities)), 2)
+    out = np.zeros(len(points), dtype=bool)
+    for comb in combs:
+        potential_breakpoints = []
+        for point in points:
+            test_1 = is_contained_by(extremities[comb[0]], point)
+            test_2 = is_contained_by(extremities[comb[1]], point)
+            if test_1 and test_2:
+                potential_breakpoints.append(point)
+        potential_breakpoints = np.array(potential_breakpoints)
+        if len(potential_breakpoints) > 1:
+            sorts = np.argsort([sum(i) for i in potential_breakpoints])
+            breakpoint = potential_breakpoints[sorts][-1]
+        elif len(potential_breakpoints) == 1:
+            breakpoint = potential_breakpoints[0]
+        elif len(potential_breakpoints) == 0:
+            breakpoint = None
+        for i, pt in enumerate(points):
+            if str(breakpoint) == str(pt):
+                out[i] = True
+    return out
 
 def unique_permutations(arr):
     return np.array(list(set(itertools.permutations(arr))))
@@ -463,3 +491,50 @@ def draw_arc(A, B, r = 0.25):
 
     theta = np.repeat(np.linspace(0, theta_limit, 100), 3).reshape((100, 3))
     return r * (np.cos(theta) * A + np.sin(theta) * B)
+    
+def create_tree_edges(points):
+    # make a list of tuples describing orthogonal connections
+    # and make a list of containments, for dotted lines
+    out = []
+    for p, point in enumerate(points):
+        for op, other_point in enumerate(points[p:]):
+            if np.linalg.norm(point - other_point) == 1:
+                if is_contained_by(point, other_point):
+                    out.append((op+p, p))
+                else: 
+                    out.append((p, op+p))
+    out = sorted(out, key=lambda x: x[0])
+    return out
+
+def plot_tree(points, path):
+    edges = create_tree_edges(points)
+    G=nx.MultiDiGraph()
+    G.add_edges_from(edges)
+    edge_order = []
+    for i in itertools.chain.from_iterable(edges):
+        if i not in edge_order: edge_order.append(i)
+    edge_order = np.array(edge_order)
+    colors = np.repeat(0, len(points))
+    colors = np.where(are_extremities(points), 1, colors)
+    colors = np.where(are_extremity_breakpoints(points), 2, colors)
+    colors = [['black', 'mediumseagreen', 'cornflowerblue'][i] for i in colors]
+    colors = [colors[i] for i in edge_order]
+
+    pos=graphviz_layout(G, prog='dot')
+    nx.draw(G, pos, with_labels=False, arrows=True, node_color=colors)
+    plt.savefig(path + '.png')
+        
+    
+    
+
+# points = np.array((
+# (1, 0, 0),
+# (0, 1, 0),
+# (1, 1, 0),
+# (2, 1, 0),
+# (1, 2, 0)
+# ))
+# 
+# edges = create_tree_edges(points)
+# print(edges)                
+    

@@ -16,7 +16,7 @@ with open('chords/chords4.json') as json_file:
             all_roots.append(roots) 
     for i, roots in enumerate(all_roots):
         shell = get_complement_shell(roots)
-        make_shell_plot(shell, roots, primes, 'chord_graphs/chord_4_' + str(i), legend=False, 
-        ratios=False, origin=False, transparent=True, origin_range=[0, 4],
-        point_color='indianred', shell_color='grey', range_override=[0, 3], 
-        shell_dot_size=0.25, dot_size=2, angles=True)
+        make_shell_plot(shell, roots, primes, 'chord_graphs/chord_4_' + str(i), 
+        legend=False, ratios=False, origin=False, transparent=True, 
+        origin_range=[0, 4],point_color='indianred', shell_color='grey', 
+        range_override=[0, 3], shell_dot_size=0.25, dot_size=2, angles=True)

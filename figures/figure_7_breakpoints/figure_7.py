@@ -1,5 +1,5 @@
 import numpy as np
-import os,sys,inspect, abjad
+import os,sys,inspect, json
 import more_itertools, itertools
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
@@ -8,7 +8,7 @@ from utils import make_plot, hz_to_cents, cartesian_product, get_ratios, are_roo
 from utils import cast_to_ordinal, are_root_breakpoints
 
 
-primes = np.array((2, 3, 5))
+primes = np.array((3, 5, 7))
 
 
 A = np.array((
@@ -34,19 +34,54 @@ A = cast_to_ordinal(A)
 A_colors = np.repeat(0, len(A))
 A_colors = np.where(are_roots(A), 1, A_colors)
 A_colors = np.where(are_root_breakpoints(A), 2, A_colors)
-A_colors = [['black', 'red', 'purple'][i] for i in A_colors]
-
-
-B = cast_to_ordinal(B)
-B_colors = np.repeat(0, len(B))
-B_colors = np.where(are_roots(B), 1, B_colors)
-B_colors = np.where(are_root_breakpoints(B), 2, B_colors)
-B_colors = [['black', 'red', 'purple'][i] for i in B_colors]
+A_colors = [['black', 'red', 'mediumorchid'][i] for i in A_colors]
 
 make_plot(A, primes, currentdir+'/A', dot_size=2, colors=A_colors,
-          ratios=False, origin=True, connect_color='black', connect_size=1,
-          legend=False, origin_range=[-1, 3])
-
-make_plot(B, primes, currentdir+'/B', dot_size=2, colors=B_colors,
-          ratios=False, origin=True, connect_color='black', connect_size=1,
-          legend=False, origin_range=[-1, 3])
+          ratios=False, origin=False, range_override=[-1, 3], connect_color='black', connect_size=1,
+          legend=False, origin_range=[-1, 3], transparent=True)
+          
+with open('chords/chords5.json') as json_file:
+    chords = json.load(json_file)
+    points = [np.array(i['points']) for i in chords]
+    
+    num_roots = np.array([np.count_nonzero(are_roots(chord)) for chord in points])
+    num_root_breakpoints = np.array([np.count_nonzero(are_root_breakpoints(chord)) for chord in points])
+    
+    
+    mask = np.logical_and(num_root_breakpoints == 1, num_roots == 3)
+    indexes = np.arange(len(points))[mask]
+    choices = np.random.choice(indexes)
+    B = cast_to_ordinal(points[choices])
+    B_colors = np.repeat(0, len(B))
+    B_colors = np.where(are_roots(B), 1, B_colors)
+    B_colors = np.where(are_root_breakpoints(B), 2, B_colors)
+    B_colors = [['black', 'red', 'mediumorchid'][i] for i in B_colors]
+    make_plot(B, primes, currentdir+'/B', dot_size=2, colors=B_colors,
+              ratios=False, origin=False, range_override=[-1, 3], connect_color='black', connect_size=1,
+              legend=False, origin_range=[-1, 3], transparent=True)
+    
+    mask = np.logical_and(num_root_breakpoints == 2, num_roots == 3)
+    indexes = np.arange(len(points))[mask]
+    choices = np.random.choice(indexes)
+    C = cast_to_ordinal(points[choices])
+    C_colors = np.repeat(0, len(C))
+    C_colors = np.where(are_roots(C), 1, C_colors)
+    C_colors = np.where(are_root_breakpoints(C), 2, C_colors)
+    C_colors = [['black', 'red', 'mediumorchid'][i] for i in C_colors]
+    make_plot(C, primes, currentdir+'/C', dot_size=2, colors=C_colors,
+              ratios=False, origin=False, range_override=[-1, 3], connect_color='black', connect_size=1,
+              legend=False, origin_range=[-1, 3], transparent=True)
+              
+    mask = np.logical_and(num_root_breakpoints == 3, num_roots == 3)
+    indexes = np.arange(len(points))[mask]
+    choices = np.random.choice(indexes)
+    D = cast_to_ordinal(points[choices])
+    D_colors = np.repeat(0, len(D))
+    D_colors = np.where(are_roots(D), 1, D_colors)
+    D_colors = np.where(are_root_breakpoints(D), 2, D_colors)
+    D_colors = [['black', 'red', 'mediumorchid'][i] for i in D_colors]
+    make_plot(D, primes, currentdir+'/D', dot_size=2, colors=D_colors,
+              ratios=False, origin=False, range_override=[-1, 3], connect_color='black', connect_size=1,
+              legend=False, origin_range=[-1, 3], transparent=True)
+    
+    
