@@ -411,7 +411,7 @@ def are_root_breakpoints(points):
                 out[i] = True
     return out
 
-def are_extremity_breakpoints(points): 
+def are_extremity_breakpoints(points):
     """Returns an array of boolean values assessing if each point is an extremity
     breakpoint by testing if it contains by two extremities, and is the most complex
     point that contains those two roots"""
@@ -491,7 +491,7 @@ def draw_arc(A, B, r = 0.25):
 
     theta = np.repeat(np.linspace(0, theta_limit, 100), 3).reshape((100, 3))
     return r * (np.cos(theta) * A + np.sin(theta) * B)
-    
+
 def create_tree_edges(points):
     # make a list of tuples describing orthogonal connections
     # and make a list of containments, for dotted lines
@@ -500,32 +500,54 @@ def create_tree_edges(points):
         for op, other_point in enumerate(points[p:]):
             if np.linalg.norm(point - other_point) == 1:
                 if is_contained_by(point, other_point):
-                    out.append((op+p, p))
-                else: 
                     out.append((p, op+p))
-    out = sorted(out, key=lambda x: x[0])
+                else:
+                    out.append((op+p, p))
+    # out = sorted(out, key=lambda x: x[0])
     return out
 
-def plot_tree(points, path):
+def plot_tree(points, path, type='root'):
+    """
+
+    possible types: root, extremity, root_extremity, root_breakpoint,
+    extremity_breakpoint,"""
     edges = create_tree_edges(points)
     G=nx.MultiDiGraph()
-    G.add_edges_from(edges)
+    G.add_edges_from(edges, style='dashed')
     edge_order = []
     for i in itertools.chain.from_iterable(edges):
         if i not in edge_order: edge_order.append(i)
     edge_order = np.array(edge_order)
     colors = np.repeat(0, len(points))
-    colors = np.where(are_extremities(points), 1, colors)
-    colors = np.where(are_extremity_breakpoints(points), 2, colors)
-    colors = [['black', 'mediumseagreen', 'cornflowerblue'][i] for i in colors]
+
+    if type == 'root':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = [['black', 'red'][i] for i in colors]
+    elif type == 'extremity':
+        colors = np.where(are_extremities(points), 1, colors)
+        colors = [['black', 'mediumseagreen'][i] for i in colors]
+    elif type == 'root_extremity':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = np.where(are_extremities(points), 2, colors)
+        colors = [['black', 'red', 'mediumseagreen'][i] for i in colors]
+    elif type == 'root_breakpoint':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = np.where(are_root_breakpoints(points), 2, colors)
+        colors = [['black', 'red', 'mediumorchid'][i] for i in colors]
+    elif type == 'extremity_breakpoint':
+        colors = np.where(are_extremities(points), 1, colors)
+        colors = np.where(are_extremity_breakpoints(points), 2, colors)
+        colors = [['black', 'mediumseagreen', 'cornflowerblue']]
+
     colors = [colors[i] for i in edge_order]
 
     pos=graphviz_layout(G, prog='dot')
-    nx.draw(G, pos, with_labels=False, arrows=True, node_color=colors)
+    print(pos)
+    nx.draw(G, pos, with_labels=False, arrows=False, node_color=colors)
     plt.savefig(path + '.png')
-        
-    
-    
+
+
+
 
 # points = np.array((
 # (1, 0, 0),
@@ -534,7 +556,6 @@ def plot_tree(points, path):
 # (2, 1, 0),
 # (1, 2, 0)
 # ))
-# 
+#
 # edges = create_tree_edges(points)
-# print(edges)                
-    
+# print(edges)
