@@ -512,8 +512,8 @@ def plot_tree(points, path, type='root'):
     possible types: root, extremity, root_extremity, root_breakpoint,
     extremity_breakpoint,"""
     edges = create_tree_edges(points)
-    G=nx.MultiDiGraph()
-    G.add_edges_from(edges, style='dashed')
+    G=nx.MultiDiGraph(size='2, 4')
+    G.add_edges_from(edges)
     edge_order = []
     for i in itertools.chain.from_iterable(edges):
         if i not in edge_order: edge_order.append(i)
@@ -537,16 +537,45 @@ def plot_tree(points, path, type='root'):
     elif type == 'extremity_breakpoint':
         colors = np.where(are_extremities(points), 1, colors)
         colors = np.where(are_extremity_breakpoints(points), 2, colors)
-        colors = [['black', 'mediumseagreen', 'cornflowerblue']]
+        colors = [['black', 'mediumseagreen', 'cornflowerblue'][i] for i in colors]
 
     colors = [colors[i] for i in edge_order]
 
     pos=graphviz_layout(G, prog='dot')
-    print(pos)
+    plt.figure(figsize=[3, 4])
     nx.draw(G, pos, with_labels=False, arrows=False, node_color=colors)
-    plt.savefig(path + '.png')
+    plt.savefig(path + '.pdf', transparent=True)
+    plt.close()
 
+def plot_basic_hsl(points, path, type='root'):
+    """
 
+    possible types: root, extremity, root_extremity, root_breakpoint,
+    extremity_breakpoint,"""
+    colors = np.repeat(0, len(points))
+    if type == 'root':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = [['black', 'red'][i] for i in colors]
+    elif type == 'extremity':
+        colors = np.where(are_extremities(points), 1, colors)
+        colors = [['black', 'mediumseagreen'][i] for i in colors]
+    elif type == 'root_extremity':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = np.where(are_extremities(points), 2, colors)
+        colors = [['black', 'red', 'mediumseagreen'][i] for i in colors]
+    elif type == 'root_breakpoint':
+        colors = np.where(are_roots(points), 1, colors)
+        colors = np.where(are_root_breakpoints(points), 2, colors)
+        colors = [['black', 'red', 'mediumorchid'][i] for i in colors]
+    elif type == 'extremity_breakpoint':
+        colors = np.where(are_extremities(points), 1, colors)
+        colors = np.where(are_extremity_breakpoints(points), 2, colors)
+        colors = [['black', 'mediumseagreen', 'cornflowerblue'][i] for i in colors]
+    else: print('Error: Unknown Type')
+    primes = np.array((3, 5, 7))
+    make_plot(points, primes, path, dot_size=2, colors=colors,
+              ratios=False, range_override=[-1, 3], connect_color='black', 
+              connect_size=1, legend=False, transparent=True)
 
 
 # points = np.array((
