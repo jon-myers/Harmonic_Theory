@@ -12,6 +12,7 @@ import math
 import matplotlib.colors
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
+from scipy.spatial.distance import cdist
 
 
 def make_legend_arrow(legend, orig_handle,
@@ -465,19 +466,37 @@ def paths_to_point(point, root = [0, 0, 0]):
     return paths
 
 def cast_to_ordinal(points):
+    # needs to be fixed, not discriminating enough!
     """Given a list of harmonic space vectors, returns the collection cast to
     ordinal position. That is, with dimensions sorted firstly by max extent from
     origin, and secondly by average extent in each dimension, and thirdly by
-    (well, nothing yet, but may have to think of more discriminators ...)"""
+    the order of extent in each dimension of point with furthers manhattan
+    distance"""
 
     mins = np.min(points, axis=0)
     points = points - mins
+    origin = np.repeat(0, np.shape(points)[-1])
+
+    # index of max manhattan distance
+    bc_origin = np.broadcast_to(origin, np.shape(points))
+    manhattan_distance = cdist(bc_origin, points, metric='cityblock')
+    max_md_index = np.argmax(manhattan_distance)
+    max_md_order = np.argsort(points[max_md_index])[::-1]
+    points = points[:, max_md_order]
+
     avg_order = np.argsort(-1 * np.average(points, axis=0))
     points = points[:, avg_order]
     max_order = np.argsort(np.max(points) - np.max(points, axis=0))
     points = points[:, max_order]
-
     return points
+
+def reorder_points(points):
+    """Reorders points such that they are in a consistent order for testing for
+    uniqueness against other sets of points."""
+    primes = np.array((2, 3, 5, 7, 11, 13, 17, 19))[:np.shape(points)[-1]]
+    mult = np.product(primes ** points, axis=1)
+    indexes = np.argsort(mult)
+    return points[indexes]
 
 def draw_arc(A, B, r = 0.25):
     A = np.where(A != 0, A / np.linalg.norm(A), A)
@@ -574,7 +593,7 @@ def plot_basic_hsl(points, path, type='root'):
     else: print('Error: Unknown Type')
     primes = np.array((3, 5, 7))
     make_plot(points, primes, path, dot_size=2, colors=colors,
-              ratios=False, range_override=[-1, 3], connect_color='black', 
+              ratios=False, range_override=[-1, 3], connect_color='black',
               connect_size=1, legend=False, transparent=True)
 
 
