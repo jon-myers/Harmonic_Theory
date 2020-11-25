@@ -53,12 +53,9 @@ def make_chords(max_tones, dims):
 
 
 
-
-# branches = make_branches(6, 3)[-1]
-
-chords = make_chords(3, 3)
-for c in chords:
-    
 # the other way of doing things seems to leave some out. I feel more confident
 # aobut this way of doing things; certainly seems faster so far. Next thing should
 # be pretty similar
+
+A = make_chords(7, 3)
+print(len(A[-1]))
