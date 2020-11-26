@@ -620,11 +620,33 @@ def get_hsv(nr, num_of_primes = 8):
 
 def analyze(ratios, root = 1):
     ratios = [Fraction(ratio).limit_denominator(1000) for ratio in ratios]
-    hsvs = np.array([get_hsv(f.numerator) - get_hsv(f.denominator) for f in ratios])
-    octave_generalized = hsvs[:, 1:]
+    full_hsvs = np.array([get_hsv(f.numerator) - get_hsv(f.denominator) for f in ratios])
+    octave_generalized = full_hsvs[:, 1:]
     primes = np.array((3, 5, 7, 11, 13, 17, 19))
-    filter = np.where(np.any(octave_generalized.T != [0, 0], axis=1))
+    filter = np.where(np.any(octave_generalized.T != np.zeros(len(ratios)), axis=1))
     chord_primes = primes[filter]
-    print(chord_primes)
+    hsvs = octave_generalized[:, filter]
+    shape = np.shape(hsvs)
+    hsvs = np.reshape(hsvs, (shape[0], shape[2]))
+    octs = full_hsvs[:, 0]
+    trials = cartesian_product(*[np.arange(-4, 5) for i in range(len(chord_primes))])
+    b_trials = np.expand_dims(trials, 1)
+    b_trials_shape = np.shape(b_trials)
+    b_trials = np.broadcast_to(b_trials, (b_trials_shape[0], len(hsvs), b_trials_shape[-1]))
+    sum = np.sum(b_trials * hsvs, axis=2)
+    possible_trials = trials[np.all(sum == octs, axis=1)]
+    if len(possible_trials) == 0:
+        print('No Dice!')
+        oct_shifts = 'Cant find good octave shifts'
+    elif len(possible_trials) == 1:
+        oct_shifts = possible_trials[0]
+    elif len(possible_trials) > 1:
+        oct_shifts = possible_trials[np.argmin(np.sum(np.abs(possible_trials), axis=1))]
 
-analyze([11/7, 5/4])
+    return chord_primes, hsvs, oct_shifts
+
+    # find an octave shift vector such that sum(osv * hsvs) = octs
+
+primes, hsvs, shifts = analyze([33/2, 7, 22, 21/2])
+
+print(primes, '\n\n', hsvs, '\n\n', shifts)
