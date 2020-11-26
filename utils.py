@@ -596,14 +596,35 @@ def plot_basic_hsl(points, path, type='root'):
               ratios=False, range_override=[-1, 3], connect_color='black',
               connect_size=1, legend=False, transparent=True)
 
+def get_factors(nr):
+    i = 2
+    factors = []
+    while i <= nr:
+        if (nr % i) == 0:
+            factors.append(i)
+            nr = nr / i
+        else:
+            i = i + 1
+    return factors
 
-# points = np.array((
-# (1, 0, 0),
-# (0, 1, 0),
-# (1, 1, 0),
-# (2, 1, 0),
-# (1, 2, 0)
-# ))
-#
-# edges = create_tree_edges(points)
-# print(edges)
+def get_hsv(nr, num_of_primes = 8):
+    """For a given number, returns its harmonic space vector."""
+    primes = np.array((2, 3, 5, 7, 11, 13, 17, 19))[:num_of_primes]
+    hsv = np.zeros_like(primes)
+    factors = np.array(get_factors(nr))
+    unique, exponents = np.unique(factors, return_counts=True)
+    for i, item in enumerate(unique):
+        index = np.where(primes == item)
+        hsv[index] = exponents[i]
+    return hsv
+
+def analyze(ratios, root = 1):
+    ratios = [Fraction(ratio).limit_denominator(1000) for ratio in ratios]
+    hsvs = np.array([get_hsv(f.numerator) - get_hsv(f.denominator) for f in ratios])
+    octave_generalized = hsvs[:, 1:]
+    primes = np.array((3, 5, 7, 11, 13, 17, 19))
+    filter = np.where(np.any(octave_generalized.T != [0, 0], axis=1))
+    chord_primes = primes[filter]
+    print(chord_primes)
+
+analyze([11/7, 5/4])
