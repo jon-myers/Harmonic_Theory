@@ -469,9 +469,9 @@ def cast_to_ordinal(points):
     # needs to be fixed, not discriminating enough!
     """Given a list of harmonic space vectors, returns the collection cast to
     ordinal position. That is, with dimensions sorted firstly by max extent from
-    origin, and secondly by average extent in each dimension, and thirdly by
-    the order of extent in each dimension of point with furthers manhattan
-    distance"""
+    origin, secondly by average extent in each dimension, and thirdly by order
+    of extent in each dimension of point with furthest manhattan
+    distance from origin."""
 
     mins = np.min(points, axis=0)
     points = points - mins
@@ -489,6 +489,26 @@ def cast_to_ordinal(points):
     max_order = np.argsort(np.max(points) - np.max(points, axis=0))
     points = points[:, max_order]
     return points
+
+def get_ordinal_sorts(points):
+    """Returns a sorting array that would cast a set of points to ordinal
+    position. """
+    mins = np.min(points, axis=0)
+    points = points - mins
+    origin = np.repeat(0, np.shape(points)[-1])
+
+    # index of max manhattan distance
+    bc_origin = np.broadcast_to(origin, np.shape(points))
+    manhattan_distance = cdist(bc_origin, points, metric='cityblock')
+    max_md_index = np.argmax(manhattan_distance)
+    max_md_order = np.argsort(points[max_md_index])[::-1]
+    points = points[:, max_md_order]
+
+    avg_order = np.argsort(-1 * np.average(points, axis=0))
+    points = points[:, avg_order]
+    max_order = np.argsort(np.max(points) - np.max(points, axis=0))
+    points = points[:, max_order]
+    return np.array((max_md_order, avg_order, max_order))
 
 def reorder_points(points):
     """Reorders points such that they are in a consistent order for testing for
@@ -597,6 +617,7 @@ def plot_basic_hsl(points, path, type='root'):
               connect_size=1, legend=False, transparent=True)
 
 def get_factors(nr):
+    """Enumerates all factors of a given number."""
     i = 2
     factors = []
     while i <= nr:
@@ -645,8 +666,65 @@ def analyze(ratios, root = 1):
 
     return chord_primes, hsvs, oct_shifts
 
-    # find an octave shift vector such that sum(osv * hsvs) = octs
+# trajectory utils
+# ________________
 
-primes, hsvs, shifts = analyze([33/2, 7, 22, 21/2])
+def ult_vector(trajectory):
+    """('Ultimate Vector') Returns the vector from the origin to the destination of the
+    trajectory."""
+    return np.sum(trajectory, axis=0)
 
-print(primes, '\n\n', hsvs, '\n\n', shifts)
+def traj_to_points(traj, unique=True, persistence=False):
+    """Convert a trajectory to the set of unique points it crosses, were it to
+    start at the origin."""
+    origin = np.zeros(np.shape(traj)[-1], dtype=int)
+    points = np.expand_dims(origin, 0)
+    for step in traj:
+        new_point = np.array([points[-1] + step])
+        points = np.concatenate((points, new_point))
+
+    unq, cts = npi.unique(points, return_counts=True)
+    if persistence == True:
+        if unique == True:
+            return unq, cts / np.sum(cts)
+        else:
+            filter = npi.indices(points, unique)
+            return points, cts[filter]
+    else:
+        if unique == True:
+            return npi.unique(points)
+        else:
+            return points
+
+def cast_traj_to_ordinal(traj):
+    """Reorders the axes of the trajectory such that the chord it generates
+    is in ordinal position, except for being translated due to the origin."""
+    points = traj_to_points(traj)
+    sorts = get_ordinal_sorts(points)
+    traj = traj[:, sorts[0]]
+    traj = traj[:, sorts[1]]
+    traj = traj[:, sorts[2]]
+    return traj
+
+def get_directionality(trajectory):
+    """Returns the proportion of steps that point in the same direction as the
+    ultimate vector, summed along each axis."""
+    uv = ult_vector(trajectory)
+    mult = uv * trajectory
+    return np.sum(np.sign(mult)) / len(mult)
+
+def get_crossings(trajectory, return_counts=True):
+    """Returns all points that are visited at least twice."""
+    points = traj_to_points(trajectory, unique=False)
+    unq, cts = npi.unique(points, return_count=True)
+    if return_counts = False:
+        return unq[cts>1]
+    else:
+        return unq[cts>1], cts[cts>1]
+
+def get_persistence(trajectory):
+    """Returns proportion of all points relative to total non-unique points
+    crossed. Basically trying to measure how often each point is visited,
+    relative to the entirety of the trajectory."""
+    points = traj_to_points(unique=False)
+    _, cts = npi.unique(points, return_count=True)

@@ -54,8 +54,5 @@ def make_chords(max_tones, dims):
 
 
 # the other way of doing things seems to leave some out. I feel more confident
-# aobut this way of doing things; certainly seems faster so far. Next thing should
+# about this way of doing things; certainly seems faster so far. Next thing should
 # be pretty similar
-
-A = make_chords(7, 3)
-print(len(A[-1]))
