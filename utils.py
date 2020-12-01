@@ -683,12 +683,12 @@ def traj_to_points(traj, unique=True, persistence=False):
         new_point = np.array([points[-1] + step])
         points = np.concatenate((points, new_point))
 
-    unq, cts = npi.unique(points, return_counts=True)
+    unq, cts = npi.unique(points, return_count=True)
     if persistence == True:
         if unique == True:
             return unq, cts / np.sum(cts)
         else:
-            filter = npi.indices(points, unique)
+            filter = npi.indices(unq, points)
             return points, cts[filter]
     else:
         if unique == True:
@@ -717,7 +717,7 @@ def get_crossings(trajectory, return_counts=True):
     """Returns all points that are visited at least twice."""
     points = traj_to_points(trajectory, unique=False)
     unq, cts = npi.unique(points, return_count=True)
-    if return_counts = False:
+    if return_counts == False:
         return unq[cts>1]
     else:
         return unq[cts>1], cts[cts>1]

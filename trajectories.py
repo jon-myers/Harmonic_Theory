@@ -1,6 +1,7 @@
 import numpy as np
 import numpy_indexed as npi
-from utils import cast_traj_to_ordinal, ult_vector, get_directionality, get_crossings
+from utils import cast_traj_to_ordinal, ult_vector, get_directionality, \
+    get_crossings, traj_to_points
 
 def make_simple_trajectories(epochs, dims):
     """Generates all possible unique simple trajectories for a given number of
@@ -40,4 +41,5 @@ a = trajes[-1][6]
 for a in trajes[-1]:
     dir = get_directionality(a)
     get_crossings(a)
-    print()
+    pts, persistence = traj_to_points(a, unique=False, persistence=True)
+    print(pts, persistence)
