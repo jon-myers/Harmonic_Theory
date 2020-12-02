@@ -310,6 +310,20 @@ def sub_branches(points):
             break
     return [points[i] for i in out]
 
+def unique_sub_branches(points):
+    """If given points, gets sub_branches, transfers all to ordinal, splits
+    into groups based on length, and remove duplicates from each of those groups,
+    before putting all unique sub branches back into an output array that is
+    returned"""
+    # TODO make this avoid getting the sub branches twice, by letting the input
+    # be sub_branches or points.
+    sb = [cast_to_ordinal(i) for i in sub_branches(points)]
+    lens = list(set([len(i) for i in sb]))
+    sb_groups = [npi.unique(np.array([i for i in sb if len(i) == j])) for j in lens]
+    out = [i for i in itertools.chain.from_iterable(sb_groups)]
+    return out
+
+
 def get_transposition_shell(points):
     """Given the points that make up a branch rooted at the origin, returns the
     points that make up its rotation shell."""
@@ -665,6 +679,22 @@ def analyze(ratios, root = 1):
         oct_shifts = possible_trials[np.argmin(np.sum(np.abs(possible_trials), axis=1))]
 
     return chord_primes, hsvs, oct_shifts
+
+# clasifiers
+
+def containment_size(points, return_containment_index=True):
+    combs = itertools.combinations(range(len(points)), 2)
+    ct = 0
+    for comb in combs:
+        if is_contained_by(comb[0], comb[1]) or is_contained_by(comb[1], comb[0]):
+            ct += 1
+    if return_containment_index == False:
+        return ct
+    else:
+        return ct, ct / len(combs)
+
+
+
 
 # trajectory utils
 # ________________

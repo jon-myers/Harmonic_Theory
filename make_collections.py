@@ -1,6 +1,7 @@
 import numpy as np
 import numpy_indexed as npi
-from utils import cast_to_ordinal, plot_basic_hsl, reorder_points, cartesian_product
+from utils import cast_to_ordinal, plot_basic_hsl, reorder_points, \
+    cartesian_product, sub_branches, unique_sub_branches, containment_size
 import json, itertools
 
 def make_branches(max_tones, dims):
@@ -51,6 +52,28 @@ def make_chords(max_tones, dims):
         chords.append(sub_chords)
     return chords
 
+chords = make_chords(5, 3)
+
+c = chords[-1][-1]
+branches = sub_branches(c)
+unq_branches = unique_sub_branches(c)
+print(len(branches))
+print(len(unq_branches))
+
+# print(len(branches))
+# hash = [str(branches)]
+# print(len(npi.unique(branches)))
+
+def pack_stats(chords, path):
+    objs = []
+    for c, chord in enumerate(chords):
+        obj = {}
+        obj['points'] = chord
+        obj['index'] = c
+        obj['branch_decomposition_size'] = len(sub_branches(c))
+        obj['unique_branch_decomposition_size'] = len(unique_sub_branches(c))
+        obj['containment_size'], obj['containment_index'] = containment_size(c)
+        objs.append(obj)
 
 
 # the other way of doing things seems to leave some out. I feel more confident
