@@ -1,7 +1,10 @@
 import numpy as np
 import numpy_indexed as npi
+from scipy.spatial.distance import cdist
 from utils import cast_to_ordinal, plot_basic_hsl, reorder_points, \
-    cartesian_product, sub_branches, unique_sub_branches, containment_size
+    cartesian_product, sub_branches, unique_sub_branches, containment_size, \
+    get_stability, get_loops, NpEncoder, get_routes, get_transposition_shell, \
+    get_multipath_shell, mean_root_distance, mean_root_angle, are_roots
 import json, itertools
 
 def make_branches(max_tones, dims):
@@ -52,30 +55,35 @@ def make_chords(max_tones, dims):
         chords.append(sub_chords)
     return chords
 
-chords = make_chords(5, 3)
-
-c = chords[-1][-1]
-branches = sub_branches(c)
-unq_branches = unique_sub_branches(c)
-print(len(branches))
-print(len(unq_branches))
-
-# print(len(branches))
-# hash = [str(branches)]
-# print(len(npi.unique(branches)))
-
 def pack_stats(chords, path):
     objs = []
     for c, chord in enumerate(chords):
+        t_shell = get_transposition_shell(chord)
+        m_shell = get_multipath_shell(chord)
+        roots = chord[are_roots(chord)]
+
         obj = {}
         obj['points'] = chord
         obj['index'] = c
-        obj['branch_decomposition_size'] = len(sub_branches(c))
-        obj['unique_branch_decomposition_size'] = len(unique_sub_branches(c))
-        obj['containment_size'], obj['containment_index'] = containment_size(c)
+        obj['branch_decomposition_size'] = len(sub_branches(chord))
+        obj['unique_branch_decomposition_size'] = len(unique_sub_branches(chord))
+        obj['containment_size'], obj['containment_index'] = containment_size(chord)
+        obj['stability'] = get_stability(chord)
+        obj['loops'] = get_loops(chord)
+        obj['routes'] = get_routes(chord)
+        obj['transposition_shell_size'] = len(t_shell)
+        obj['transposition_shell_proportion'] = len(chord) / len(t_shell)
+        obj['multipath_shell_size'] = len(m_shell)
+        obj['multipath_shell_proportion'] = len(chord) / len(m_shell)
+        obj['roots'] = len(roots)
+        obj['mean_root_distance'] = mean_root_distance(chord)
+        obj['mean_root_angle'] = mean_root_angle(chord)
+
         objs.append(obj)
+    json.dump(objs, open(path, 'w'), cls=NpEncoder)
 
+chords = make_chords(4, 3)
 
-# the other way of doing things seems to leave some out. I feel more confident
-# about this way of doing things; certainly seems faster so far. Next thing should
-# be pretty similar
+c = chords[-1]
+
+pack_stats(c, 'test.json')

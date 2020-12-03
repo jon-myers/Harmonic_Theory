@@ -1,6 +1,7 @@
-import itertools
+import itertools, json, math
 from fractions import Fraction
 import numpy as np
+import math
 import numpy_indexed as npi
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyArrowPatch
@@ -8,7 +9,6 @@ from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d import proj3d
 from matplotlib.legend_handler import HandlerPatch
 import matplotlib.patches as mpatches
-import math
 import matplotlib.colors
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
@@ -323,7 +323,6 @@ def unique_sub_branches(points):
     out = [i for i in itertools.chain.from_iterable(sb_groups)]
     return out
 
-
 def get_transposition_shell(points):
     """Given the points that make up a branch rooted at the origin, returns the
     points that make up its rotation shell."""
@@ -334,6 +333,15 @@ def get_transposition_shell(points):
     all_points = np.concatenate(transpositions)
     unique = np.unique(all_points, axis=0)
     return unique
+
+def get_multipath_shell(points):
+    for point in points:
+        multipath = cartesian_product(*[np.arange(i+1) for i in point])
+        if 'multipath_shell' not in locals():
+            multipath_shell = multipath
+        else:
+            multipath_shell = np.vstack((multipath_shell, multipath))
+    return np.unique(multipath_shell, axis=0)
 
 def get_transpositions(points):
     dims = np.shape(points)[-1]
@@ -354,7 +362,34 @@ def get_stability(points):
         out = np.round(np.mean(counts) / 6, 2)
         return out
 
+def get_loops(points):
+    """Returns the number of loops in the structure of the chord"""
+    ct = 0
+    diffs = points[:, None] - points[None, :]
+    diffs = np.linalg.norm(diffs, axis=2)
 
+    one_inds = np.array(np.nonzero(diffs == 1)).T
+    root_two_inds = np.array(np.nonzero(diffs == np.sqrt(2))).T
+
+    filtered_root_two_inds = []
+    for i in root_two_inds:
+        truth = True
+        for j in filtered_root_two_inds:
+            if np.all(i[::-1] == j):
+                truth = False
+        if truth:
+            filtered_root_two_inds.append(i)
+    filtered_root_two_inds = np.array(filtered_root_two_inds)
+
+    for i in filtered_root_two_inds:
+        ones_a = one_inds[np.nonzero(one_inds[:,0] == i[0])]
+        ones_b = one_inds[np.nonzero(one_inds[:,0] == i[1])]
+        points_a = points[ones_a[:, 1]]
+        points_b = points[ones_b[:, 1]]
+        intersections = npi.intersection(points_a, points_b)
+        if len(intersections) == 2:
+            ct += 1
+    return ct / 2
 
 def get_complement_shell(points):
     """Given the points that make up a branch rooted at the origin, returns the
@@ -367,7 +402,6 @@ def get_complement_shell(points):
         complement_shell = np.concatenate((complement_shell, shell), axis=0)
     complement_shell = np.unique(complement_shell, axis=0)
     return complement_shell
-
 
 def is_contained_by(point, container):
     """Returns True if point is contained by container"""
@@ -683,7 +717,7 @@ def analyze(ratios, root = 1):
 # clasifiers
 
 def containment_size(points, return_containment_index=True):
-    combs = itertools.combinations(range(len(points)), 2)
+    combs = [i for i in itertools.combinations(range(len(points)), 2)]
     ct = 0
     for comb in combs:
         if is_contained_by(comb[0], comb[1]) or is_contained_by(comb[1], comb[0]):
@@ -691,11 +725,51 @@ def containment_size(points, return_containment_index=True):
     if return_containment_index == False:
         return ct
     else:
-        return ct, ct / len(combs)
+        return ct, ct / len([i for i in combs])
 
 
 
+def get_routes(points):
+    """Return the number of routes in a chord."""
+    # intersections + extremities + loops - 1
+    counts=[]
+    for pt in points:
+        dists = points-pt
+        count = np.count_nonzero(np.linalg.norm(points-pt, axis=1) == 1)
+        counts.append(count)
+    counts = np.array(counts)
+    intersections = np.count_nonzero(counts > 2)
+    extremities = np.count_nonzero(counts == 1)
+    loops = get_loops(points)
+    return intersections + extremities + loops - 1
 
+def mean_root_distance(points):
+    roots = points[are_roots(points)]
+    combined_dist = 0
+    for root in roots:
+
+        # dist = cdist(np.zeros_like(root), root, metric='cityblock')
+        dist = np.sum(root)
+        combined_dist += dist
+    return combined_dist / len(roots)
+
+def mean_root_angle(points):
+    roots = points[are_roots(points)]
+    combs = [i for i in itertools.combinations(range(len(roots)), 2)]
+    angle_sum = 0
+    for comb in combs:
+        dot = np.dot(roots[comb[0]], roots[comb[1]])
+        print(dot)
+        angle_sum += np.arccos(np.dot(roots[comb[0]], roots[comb[1]]))
+    if len(roots) == 1:
+        return angle_sum
+    else:
+        return angle_sum * 2 * math.factorial(len(roots) - 2) / math.factorial(len(roots))
+
+
+
+# test = np.array(((0, 0, 0), (0, 1, 1), (0, 0, 1)))
+# get_routes(test)
 # trajectory utils
 # ________________
 
@@ -758,3 +832,15 @@ def get_persistence(trajectory):
     relative to the entirety of the trajectory."""
     points = traj_to_points(unique=False)
     _, cts = npi.unique(points, return_count=True)
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NpEncoder, self).default(obj)
