@@ -768,8 +768,6 @@ def mean_root_angle(points):
 
 
 
-# test = np.array(((0, 0, 0), (0, 1, 1), (0, 0, 1)))
-# get_routes(test)
 # trajectory utils
 # ________________
 
@@ -826,14 +824,48 @@ def get_crossings(trajectory, return_counts=True):
     else:
         return unq[cts>1], cts[cts>1]
 
-def get_persistence(trajectory):
-    """Returns proportion of all points relative to total non-unique points
-    crossed. Basically trying to measure how often each point is visited,
-    relative to the entirety of the trajectory."""
-    points = traj_to_points(unique=False)
-    _, cts = npi.unique(points, return_count=True)
+# def get_persistence(trajectory):
+#     """Returns proportion of all points relative to total non-unique points
+#     crossed. Basically trying to measure how often each point is visited,
+#     relative to the entirety of the trajectory."""
+#     points = traj_to_points(unique=False)
+#     _, cts = npi.unique(points, return_count=True)
 
 
+def traj_decomposition(traj, show_unq=True, show_proportion=True):
+    """Returns the list of ordered subsets of the original trajectory, and (if
+    required) the list of unique subsets of the trajectory."""
+    traj_inds = [i for i in range(len(traj))]
+    decomp_index = []
+    for i, end in enumerate(range(1, len(traj))[::-1]):
+        steps = i + 2
+        for step in range(steps):
+            decomp_index.append(np.array(traj_inds[step: step + end]))
+    decomp = [traj[i] for i in decomp_index]
+    unq = unq_traj_decomp(decomp)
+    prop = len(unq) /len(decomp)
+    if show_unq and show_proportion:
+        return decomp, unq, prop
+    elif show_unq:
+        return decomp, unq
+    elif show_proportion:
+        return decomp, prop
+    else:
+        return decomp
+
+def unq_traj_decomp(decomp):
+    """Takes a decomp (list of subsets of trajectory) and returns the list of
+    unique sub-trajectories that have been cast to ordinal."""
+    ord = [cast_traj_to_ordinal(i) for i in decomp]
+    lens = list(set([len(i) for i in ord]))
+    sb_groups = [npi.unique(np.array([i for i in ord if len(i) == j])) for j in lens]
+    out = [i for i in itertools.chain.from_iterable(sb_groups)]
+    return out
+
+test = np.array(((0, 0, 1), (0, 1, 0), (0, 1, 0), (-1, 0, 0)))
+
+print(traj_decomposition(test))
+traj_decomposition(test)
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
