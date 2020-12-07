@@ -758,9 +758,11 @@ def mean_root_angle(points):
     combs = [i for i in itertools.combinations(range(len(roots)), 2)]
     angle_sum = 0
     for comb in combs:
-        dot = np.dot(roots[comb[0]], roots[comb[1]])
-        print(dot)
-        angle_sum += np.arccos(np.dot(roots[comb[0]], roots[comb[1]]))
+        A = roots[comb[0]]
+        B = roots[comb[1]]
+        dot_product = np.dot(A, B)
+        mag_product = np.linalg.norm(A) * np.linalg.norm(B)
+        angle_sum += np.arccos(dot_product/ mag_product)
     if len(roots) == 1:
         return angle_sum
     else:
