@@ -64,6 +64,8 @@ def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True
     else:
         return fracs
 
+
+# TODO remove plotting from utils and change import refs to import from plot.py
 def make_plot(pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
@@ -800,6 +802,24 @@ def traj_to_points(traj, unique=True, persistence=False):
         else:
             return points
 
+def traj_to_point_tuples(traj, root = None):
+    """Returns an array of tuples of the start and endpoint of each traj vector,
+    pasted end-to-front."""
+    if np.all(root == None):
+        root = np.zeros(np.shape(traj)[-1])
+        steps = []
+    for i, step in enumerate(traj):
+        if i == 0:
+            start = root
+        else:
+            start = steps[-1][1]
+        end = start + step
+        steps.append((start, end))
+    return steps
+
+
+
+
 def cast_traj_to_ordinal(traj):
     """Reorders the axes of the trajectory such that the chord it generates
     is in ordinal position, except for being translated due to the origin."""
@@ -863,11 +883,11 @@ def unq_traj_decomp(decomp):
     sb_groups = [npi.unique(np.array([i for i in ord if len(i) == j])) for j in lens]
     out = [i for i in itertools.chain.from_iterable(sb_groups)]
     return out
-
-test = np.array(((0, 0, 1), (0, 1, 0), (0, 1, 0), (-1, 0, 0)))
-
-print(traj_decomposition(test))
-traj_decomposition(test)
+#
+# test = np.array(((0, 0, 1), (0, 1, 0), (0, 1, 0), (-1, 0, 0)))
+#
+# print(traj_decomposition(test))
+# traj_decomposition(test)
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):

@@ -31,15 +31,15 @@ def make_simple_trajectories(epochs, dims):
         layers.append(next_steps)
     return layers
 
-trajes = make_simple_trajectories(6, 3)
-# for t in trajes[-1]:
-#     print(t)
-#     print(ult_vector(t))
-#     print(get_directionality(t))
-
-a = trajes[-1][6]
-for a in trajes[-1]:
-    dir = get_directionality(a)
-    get_crossings(a)
-    pts, persistence = traj_to_points(a, unique=False, persistence=True)
-    print(pts, persistence)
+# trajes = make_simple_trajectories(6, 3)
+# # for t in trajes[-1]:
+# #     print(t)
+# #     print(ult_vector(t))
+# #     print(get_directionality(t))
+#
+# a = trajes[-1][6]
+# for a in trajes[-1]:
+#     dir = get_directionality(a)
+#     get_crossings(a)
+#     pts, persistence = traj_to_points(a, unique=False, persistence=True)
+#     print(pts, persistence)
