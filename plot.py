@@ -9,7 +9,7 @@ import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from scipy.spatial.distance import cdist
 import numpy as np
-from utils import traj_to_point_tuples
+from utils import traj_to_point_tuples, traj_to_points
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -328,7 +328,8 @@ def plot_basic_hsl(points, path, type='root'):
               connect_size=1, legend=False, transparent=True)
 
 def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
-    file_type='pdf', transparent=True):
+    file_type='pdf', transparent=True, arrow_proportion=0.7, dot_color='black',
+    arrow_color='blue'):
     if np.all(root == None):
         root = np.zeros(np.shape(traj)[-1], dtype=int)
 
@@ -336,8 +337,21 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
     steps = traj_to_point_tuples(traj)
     for step in steps:
-        arrow = Arrow3D(*np.array(step).T, mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
+        np_step = np.array(step)
+        changing_index = np.nonzero(np_step[0] != np_step[1])
+        start = np_step[0, changing_index]
+        end = np_step[1, changing_index]
+        delta = end - start
+        alt_start = start + (1 - arrow_proportion) * delta / 2
+        alt_end = end - (1 - arrow_proportion) * delta / 2
+        np_step[:, changing_index] = [alt_start, alt_end]
+        arrow = Arrow3D(*np_step.T, mutation_scale=10, lw=1, arrowstyle='-|>',
+                        color=arrow_color)
         ax.add_artist(arrow)
+
+    points = traj_to_points(traj)
+    for pt in points:
+        ax.scatter(*pt, color=dot_color, depthshade=False, s=int(60))
     # x_arrow = Arrow3D([0, 1], [0, 0], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
     # ax.add_artist(x_arrow)
 
@@ -351,6 +365,6 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
     plt.savefig(path + '.' + file_type, transparent=transparent)
     plt.close()
 
-test_traj = np.array(((1, 0, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 0, -1)))
-
-plot_simple_trajectory(test_traj, 'test')
+# test_traj = np.array(((1, 0, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 0, -1)))
+#
+# plot_simple_trajectory(test_traj, 'test')

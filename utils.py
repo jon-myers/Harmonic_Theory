@@ -883,11 +883,8 @@ def unq_traj_decomp(decomp):
     sb_groups = [npi.unique(np.array([i for i in ord if len(i) == j])) for j in lens]
     out = [i for i in itertools.chain.from_iterable(sb_groups)]
     return out
-#
-# test = np.array(((0, 0, 1), (0, 1, 0), (0, 1, 0), (-1, 0, 0)))
-#
-# print(traj_decomposition(test))
-# traj_decomposition(test)
+
+
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -898,3 +895,22 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return super(NpEncoder, self).default(obj)
+
+def tex_matrix_writer(matrix, path):
+    out = '\documentclass{article}\n'\
+          '\\begin{document} $\n'\
+          '\\left[\n'\
+          '\\begin{array}'
+    horiz = '|'.join(['c' for i in range(len(matrix))])
+    out += '{' + horiz + '}\n'
+    for dim in range(np.shape(matrix)[-1]):
+        out += ' & '.join([str(i) for i in matrix[:,dim]]) + ' \\\\\n'
+    out += '\end{array}\n'\
+           '\\right] $\n'\
+           '\end{document}'
+    with open(path, 'w') as file:
+        file.write(out)
+
+
+# test = np.array(((0, 0, 1), (1, 0, 1), (2, 3, 4)))
+# tex_matrix_writer(test, 'test_tex.tex')
