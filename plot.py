@@ -328,14 +328,26 @@ def plot_basic_hsl(points, path, type='root'):
               connect_size=1, legend=False, transparent=True)
 
 def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
+<<<<<<< Updated upstream
     file_type='pdf', transparent=True, arrow_proportion=0.7, dot_color='black',
     arrow_color='blue'):
+=======
+    file_type='pdf', transparent=True, dot_size=1):
+>>>>>>> Stashed changes
     if np.all(root == None):
         root = np.zeros(np.shape(traj)[-1], dtype=int)
 
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+    
+    points = traj_to_points(traj)
     steps = traj_to_point_tuples(traj)
+    
+    for pt in points:
+        ax.scatter(pt[0], pt[1], pt[2], color='black', depthshade=False, 
+        s=int(60 * dot_size))
+        
+    
     for step in steps:
         np_step = np.array(step)
         changing_index = np.nonzero(np_step[0] != np_step[1])

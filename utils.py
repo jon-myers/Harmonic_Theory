@@ -802,7 +802,7 @@ def traj_to_points(traj, unique=True, persistence=False):
         else:
             return points
 
-def traj_to_point_tuples(traj, root = None):
+def traj_to_point_tuples(traj, root = None, offset = 0.1):
     """Returns an array of tuples of the start and endpoint of each traj vector,
     pasted end-to-front."""
     if np.all(root == None):
@@ -812,8 +812,8 @@ def traj_to_point_tuples(traj, root = None):
         if i == 0:
             start = root
         else:
-            start = steps[-1][1]
-        end = start + step
+            start = np.ceil(steps[-1][1])
+        end = start + step * (1 - offset)
         steps.append((start, end))
     return steps
 
