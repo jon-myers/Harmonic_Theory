@@ -328,12 +328,8 @@ def plot_basic_hsl(points, path, type='root'):
               connect_size=1, legend=False, transparent=True)
 
 def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
-<<<<<<< Updated upstream
     file_type='pdf', transparent=True, arrow_proportion=0.7, dot_color='black',
     arrow_color='blue'):
-=======
-    file_type='pdf', transparent=True, dot_size=1):
->>>>>>> Stashed changes
     if np.all(root == None):
         root = np.zeros(np.shape(traj)[-1], dtype=int)
 

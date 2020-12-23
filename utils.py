@@ -50,6 +50,7 @@ def get_segments(pts):
 def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True):
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
+    print(primes, octaves, pts)
     prods = np.product((primes * (2.0**octaves)) ** pts, axis=1)
     fracs = [Fraction(i).limit_denominator(1000) for i in prods]
     if oct_generalized == True:
@@ -528,17 +529,107 @@ def cast_to_ordinal(points):
     origin = np.repeat(0, np.shape(points)[-1])
 
     # index of max manhattan distance
-    bc_origin = np.broadcast_to(origin, np.shape(points))
-    manhattan_distance = cdist(bc_origin, points, metric='cityblock')
-    max_md_index = np.argmax(manhattan_distance)
-    max_md_order = np.argsort(points[max_md_index])[::-1]
-    points = points[:, max_md_order]
+    # TODO figure out how to deal with when mthere are multiple tones that share
+    # the max manhattan distance. example is [[0, 1, 0,], [1, 1, 0], [2, 1, 0], [2, 2, 0], [1, 0, 1], [1, 1, 1], [1, 2, 1]] 
+    # bc_origin = np.broadcast_to(origin, np.shape(points))
+    # md = np.sum(points, axis=1) # manhattan distance
+    # max_md_indexes = np.argwhere(md == np.amax(md)).flatten()
+    # for max_md_index in max_md_indexes:
+    #     max_md_order = np.argsort(points[max_md_index])[::-1]
+    #     points = points[:, max_md_order]
+    # max_md_order = np.argsort(points[max_md_index])[::-1]
+    # points = points[:, max_md_order]
 
-    avg_order = np.argsort(-1 * np.average(points, axis=0))
+    avg = np.average(points, axis=0)
+    avg_dup_indexes = indexes_of_duplicates(avg)
+    if len(avg_dup_indexes) > 1:
+        print('Potentially fatal: multiple avg dups!')
+    elif len(avg_dup_indexes) == 1:
+        avg_dup_indexes = avg_dup_indexes[0]
+    avg_order = np.argsort(-1 * avg)
     points = points[:, avg_order]
-    max_order = np.argsort(np.max(points) - np.max(points, axis=0))
+    
+    maxs = np.max(points) - np.max(points, axis=0)
+    avg_dup_maxs = indexes_of_duplicates(maxs)
+    if len(avg_dup_maxs) > 1:
+        print('Potentially fatal: multiple avg maxs!')
+    elif len(avg_dup_maxs) == 1:
+        avg_dup_maxs = avg_dup_maxs[0]
+    max_order = np.argsort(maxs)
     points = points[:, max_order]
+    
+    shared_dims = np.intersect1d(avg_dup_indexes, avg_dup_maxs)
+    if len(shared_dims) > 2:
+        print('Potentially fatal: shared dims greater than 2!')
+    elif len(shared_dims) == 2:
+        dims = np.arange(np.shape(points)[-1])
+        non_shared_dims = dims[np.invert(npi.contains(shared_dims, dims))]
+
+        #discriminatory collection
+        shared_dim_points = points[:, shared_dims]
+        equal_filter = shared_dim_points[:,0] - shared_dim_points[:,1] == 0
+        
+        non_shared_dim_points = points[:, non_shared_dims]
+        seperated_dup_inds = indexes_of_duplicates_2d(non_shared_dim_points)
+        
+        inverted_inds = []
+        for dup_inds in seperated_dup_inds:
+            combs = itertools.combinations(dup_inds, 2)
+            for comb in combs:
+                if np.all(shared_dim_points[comb[0]] == shared_dim_points[comb[1]][::-1]):
+                    for c in comb:
+                        inverted_inds.append(c)
+        inverted_filter = npi.contains(np.array(inverted_inds), np.arange(len(points)))
+        filter = np.invert(np.logical_or(equal_filter,inverted_filter))
+        C_dis = points[filter]
+        mds = np.sum(C_dis, axis=1)
+        max_mds = np.max(mds)
+        if np.count_nonzero(mds == max_mds) > 1:
+            print('Potentially fatal: shared max manhattan distances in C_dis')
+        T_mmd = C_dis[np.argmax(mds)]
+        dis_sorts = np.argsort(T_mmd[shared_dims])[::-1]
+        sorts = dims[:]
+        sorts[shared_dims] = dis_sorts
+        points = points[:, sorts]
     return points
+
+def indexes_of_duplicates(arr):
+    """Given a 1-d numpy array, arr, returns a list of numpy arrays each filled with 
+    the indexes of any items in arr that appear more than once."""
+    arr = np.array(arr)
+    idx_sort = np.argsort(arr)
+    sorted = arr[idx_sort]
+    vals, idx_start, count = np.unique(arr, return_counts=True, return_index=True)
+    res = np.split(idx_sort, idx_start[1:])
+    vals = vals[count > 1]
+    res = filter(lambda x: x.size > 1, res)
+    return list(res)
+    
+def indexes_of_duplicates_2d(arr):
+    """Given a 2-d numpy array, arr, returns a list of numpy arrays each filled with 
+    the indexes of any items in arr that appear more than once."""
+    arr = np.array(arr)
+    unq = npi.unique(arr)
+    out = [np.nonzero(npi.contains([u], arr))[0] for u in unq]
+    out = [i for i in out if len(i) > 1]
+    return out
+    
+    
+
+
+
+test = np.array((
+(0, 0, 0),
+(1, 0, 0),
+(1, 1, 0),
+(0, 1, 1), 
+(1, 1, 1), 
+(1, 2, 1),
+(2, 1, 1),
+))
+
+out = cast_to_ordinal(test)
+print(out)
 
 def get_ordinal_sorts(points):
     """Returns a sorting array that would cast a set of points to ordinal
