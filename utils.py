@@ -50,7 +50,6 @@ def get_segments(pts):
 def get_ratios(pts, primes, octaves = None, oct_generalized = False, string=True):
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
-    print(primes, octaves, pts)
     prods = np.product((primes * (2.0**octaves)) ** pts, axis=1)
     fracs = [Fraction(i).limit_denominator(1000) for i in prods]
     if oct_generalized == True:
@@ -72,7 +71,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
-              file_type='pdf', opacity=0.5, root_layout=False):
+              file_type='pdf', opacity=0.5, root_layout=False, elev=16, azim=-72):
 
 
     c = matplotlib.colors.get_named_colors_mapping()
@@ -83,19 +82,13 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
     if np.all(draw_points == None):
-        # if root_layout == True and len(rl_draw_points) > 0:
-        #     segments = get_segments(np.concatenate((pts, rl_draw_points)))
-        # else:
         segments = get_segments(pts)
     else:
-        # if root_layout == True and len(rl_draw_points) > 0:
-        #     segments = get_segments(np.concatenate((pts, draw_points, rl_draw_points)))
-        # else:
         segments = get_segments(np.concatenate((pts, draw_points)))
 
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
-    ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+    ax = mplot3d.Axes3D(fig, elev=elev, azim=azim)
     ax.set_axis_off()
 
     min = np.min(pts)
@@ -160,7 +153,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if legend == True:
 
         fig = plt.figure(figsize=[8, 6])
-        ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+        ax = mplot3d.Axes3D(fig, elev=elev, azim=azim)
         x_arrow = Arrow3D([-.005, 0.25], [0, 0], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
         y_arrow = Arrow3D([0, 0], [-0.01, 0.5], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
         z_arrow = Arrow3D([0, 0], [0, 0], [-0.01, 0.35], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
@@ -175,6 +168,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
         ax.set_axis_off()
         plt.savefig(path + '_legend.' + file_type, transparent=transparent)
         plt.close()
+
 
 
 
@@ -528,18 +522,6 @@ def cast_to_ordinal(points):
     points = points - mins
     origin = np.repeat(0, np.shape(points)[-1])
 
-    # index of max manhattan distance
-    # TODO figure out how to deal with when mthere are multiple tones that share
-    # the max manhattan distance. example is [[0, 1, 0,], [1, 1, 0], [2, 1, 0], [2, 2, 0], [1, 0, 1], [1, 1, 1], [1, 2, 1]] 
-    # bc_origin = np.broadcast_to(origin, np.shape(points))
-    # md = np.sum(points, axis=1) # manhattan distance
-    # max_md_indexes = np.argwhere(md == np.amax(md)).flatten()
-    # for max_md_index in max_md_indexes:
-    #     max_md_order = np.argsort(points[max_md_index])[::-1]
-    #     points = points[:, max_md_order]
-    # max_md_order = np.argsort(points[max_md_index])[::-1]
-    # points = points[:, max_md_order]
-
     avg = np.average(points, axis=0)
     avg_dup_indexes = indexes_of_duplicates(avg)
     if len(avg_dup_indexes) > 1:
@@ -613,23 +595,6 @@ def indexes_of_duplicates_2d(arr):
     out = [np.nonzero(npi.contains([u], arr))[0] for u in unq]
     out = [i for i in out if len(i) > 1]
     return out
-    
-    
-
-
-
-test = np.array((
-(0, 0, 0),
-(1, 0, 0),
-(1, 1, 0),
-(0, 1, 1), 
-(1, 1, 1), 
-(1, 2, 1),
-(2, 1, 1),
-))
-
-out = cast_to_ordinal(test)
-print(out)
 
 def get_ordinal_sorts(points):
     """Returns a sorting array that would cast a set of points to ordinal

@@ -17,7 +17,7 @@ three = np.array((
     (0, 1, 0)
     ))
     
-three_sorted = cast_to_ordinal(B)
+three_sorted = cast_to_ordinal(three)
 
 four = np.array((
     (0, 0, 0),
@@ -29,7 +29,7 @@ four = np.array((
     (2, 1, 1)
     ))
 
-four_sorted = cast_to_ordinal(D)
+four_sorted = cast_to_ordinal(four)
 # 
 primes = np.array((2, 3, 5))
 
@@ -45,19 +45,25 @@ one = np.array((
 one_sorted = one - np.min(one, axis=0)
 
 make_plot(one, primes, currentdir + '/one', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
 make_plot(one_sorted, primes, currentdir + '/one_sorted', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
           
 make_plot(three, primes, currentdir + '/three', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
 make_plot(three_sorted, primes, currentdir + '/three_sorted', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
           
 make_plot(four, primes, currentdir + '/four', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
 make_plot(four_sorted, primes, currentdir + '/four_sorted', origin=True, legend=False, 
-          connect_color = 'black', dot_size=2, transparent=True)
+          connect_color = 'black', dot_size=2, transparent=True, elev=13, 
+          azim=-58)
 # tex_matrix_writer(A, currentdir+'/A.tex')
 # os.system('pdflatex -output-dir=./equations/ equations/A.tex')
 # os.remove(currentdir + '/A' + '.aux')
