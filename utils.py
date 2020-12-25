@@ -530,7 +530,7 @@ def cast_to_ordinal(points):
         avg_dup_indexes = avg_dup_indexes[0]
     avg_order = np.argsort(-1 * avg)
     points = points[:, avg_order]
-    
+
     maxs = np.max(points) - np.max(points, axis=0)
     avg_dup_maxs = indexes_of_duplicates(maxs)
     if len(avg_dup_maxs) > 1:
@@ -539,7 +539,7 @@ def cast_to_ordinal(points):
         avg_dup_maxs = avg_dup_maxs[0]
     max_order = np.argsort(maxs)
     points = points[:, max_order]
-    
+
     shared_dims = np.intersect1d(avg_dup_indexes, avg_dup_maxs)
     if len(shared_dims) > 2:
         print('Potentially fatal: shared dims greater than 2!')
@@ -550,10 +550,10 @@ def cast_to_ordinal(points):
         #discriminatory collection
         shared_dim_points = points[:, shared_dims]
         equal_filter = shared_dim_points[:,0] - shared_dim_points[:,1] == 0
-        
+
         non_shared_dim_points = points[:, non_shared_dims]
         seperated_dup_inds = indexes_of_duplicates_2d(non_shared_dim_points)
-        
+
         inverted_inds = []
         for dup_inds in seperated_dup_inds:
             combs = itertools.combinations(dup_inds, 2)
@@ -576,7 +576,7 @@ def cast_to_ordinal(points):
     return points
 
 def indexes_of_duplicates(arr):
-    """Given a 1-d numpy array, arr, returns a list of numpy arrays each filled with 
+    """Given a 1-d numpy array, arr, returns a list of numpy arrays each filled with
     the indexes of any items in arr that appear more than once."""
     arr = np.array(arr)
     idx_sort = np.argsort(arr)
@@ -586,9 +586,9 @@ def indexes_of_duplicates(arr):
     vals = vals[count > 1]
     res = filter(lambda x: x.size > 1, res)
     return list(res)
-    
+
 def indexes_of_duplicates_2d(arr):
-    """Given a 2-d numpy array, arr, returns a list of numpy arrays each filled with 
+    """Given a 2-d numpy array, arr, returns a list of numpy arrays each filled with
     the indexes of any items in arr that appear more than once."""
     arr = np.array(arr)
     unq = npi.unique(arr)
@@ -968,5 +968,23 @@ def tex_matrix_writer(matrix, path):
         file.write(out)
 
 
-# test = np.array(((0, 0, 1), (1, 0, 1), (2, 3, 4)))
-# tex_matrix_writer(test, 'test_tex.tex')
+def max_possible_roots(size, dims):
+    """Given the number of points in a collection and dimensions of harmonic
+    space it occupies, returns the maximum possible number of roots (or,
+    extremities)."""
+    pts_left = size - 1
+    roots = 1
+    while pts_left >= roots * dims:
+        pts_left -= roots * dims
+        roots *= dims
+    add = pts_left - int(np.ceil(pts_left / dims))
+    roots += add
+    return roots
+
+out = max_possible_roots(15, 4)
+print(out)
+
+
+for size in range(1, 10):
+    for dim in range(1, size):
+        print((size, dim), max_possible_roots(size, dim))

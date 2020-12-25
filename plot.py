@@ -9,7 +9,7 @@ import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from scipy.spatial.distance import cdist
 import numpy as np
-from utils import traj_to_point_tuples, traj_to_points
+from utils import traj_to_point_tuples, traj_to_points, get_segments, get_ratios
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -27,7 +27,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
               range_override=[0, 0], transparent=False, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
-              file_type='pdf', opacity=0.5, root_layout=False):
+              file_type='pdf', opacity=0.5, root_layout=False, elev=16, azim=-72):
 
 
     c = matplotlib.colors.get_named_colors_mapping()
@@ -38,19 +38,13 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
     if np.all(draw_points == None):
-        # if root_layout == True and len(rl_draw_points) > 0:
-        #     segments = get_segments(np.concatenate((pts, rl_draw_points)))
-        # else:
         segments = get_segments(pts)
     else:
-        # if root_layout == True and len(rl_draw_points) > 0:
-        #     segments = get_segments(np.concatenate((pts, draw_points, rl_draw_points)))
-        # else:
         segments = get_segments(np.concatenate((pts, draw_points)))
 
     ratios = get_ratios(pts, primes, octaves, oct_generalized)
     fig = plt.figure(figsize=[8, 6])
-    ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+    ax = mplot3d.Axes3D(fig, elev=elev, azim=azim)
     ax.set_axis_off()
 
     min = np.min(pts)
@@ -115,7 +109,7 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     if legend == True:
 
         fig = plt.figure(figsize=[8, 6])
-        ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
+        ax = mplot3d.Axes3D(fig, elev=elev, azim=azim)
         x_arrow = Arrow3D([-.005, 0.25], [0, 0], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
         y_arrow = Arrow3D([0, 0], [-0.01, 0.5], [0, 0], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
         z_arrow = Arrow3D([0, 0], [0, 0], [-0.01, 0.35], mutation_scale=20, lw=1, arrowstyle='-|>', color='black')
@@ -131,8 +125,30 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
         plt.savefig(path + '_legend.' + file_type, transparent=transparent)
         plt.close()
 
+def make_2d_plot(points, path, axis_range=[-1, 3], origin=True):
+    fig = plt.figure(figsize=[6, 6])
+    ax = fig.add_subplot(111)
+    if origin:
+        ax.arrow(axis_range[0], 0, axis_range[1] - axis_range[0], 0, color='black',
+                 length_includes_head=True, width=0.001, head_width=0.1)
+        ax.arrow(0, axis_range[0], 0, axis_range[1] - axis_range[0], color='black',
+                 length_includes_head=True, width=0.001, head_width=0.1)
+        ticks = [i for i in range(axis_range[0]+1, axis_range[1])]
+        ax.scatter(ticks, [0 for i in range(len(ticks))], color='black',
+                   marker='|', s=40)
+        ax.scatter([0 for i in range(len(ticks))], ticks, color='black',
+                   marker='_', s=40)
+
+    segs = get_segments(points)
+    for seg in segs:
+        ax.plot(seg[0], seg[1], color='black', alpha=1, lw=3)
+    ax.scatter(points[:, 0], points[:, 1], color='black', s=150)
 
 
+    ax.set_axis_off()
+    ax.set_xlim(*axis_range)
+    ax.set_ylim(*axis_range)
+    plt.savefig(path + '.pdf', transparent=True)
 
 def make_shell_plot(shell, pts, primes, path, octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
@@ -335,15 +351,15 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
 
     fig = plt.figure(figsize=[8, 6])
     ax = mplot3d.Axes3D(fig, elev=16, azim=-72)
-    
+
     points = traj_to_points(traj)
     steps = traj_to_point_tuples(traj)
-    
+
     for pt in points:
-        ax.scatter(pt[0], pt[1], pt[2], color='black', depthshade=False, 
+        ax.scatter(pt[0], pt[1], pt[2], color='black', depthshade=False,
         s=int(60 * dot_size))
-        
-    
+
+
     for step in steps:
         np_step = np.array(step)
         changing_index = np.nonzero(np_step[0] != np_step[1])
