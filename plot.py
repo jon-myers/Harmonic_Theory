@@ -9,7 +9,9 @@ import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from scipy.spatial.distance import cdist
 import numpy as np
-from utils import traj_to_point_tuples, traj_to_points, get_segments, get_ratios
+import itertools
+from utils import traj_to_point_tuples, traj_to_points, get_segments, \
+                  get_ratios, is_contained_by, are_roots
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -272,6 +274,7 @@ def create_tree_edges(points):
     # out = sorted(out, key=lambda x: x[0])
     return out
 
+
 def plot_tree(points, path, type='root'):
     """
 
@@ -389,6 +392,14 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
     plt.savefig(path + '.' + file_type, transparent=transparent)
     plt.close()
 
-# test_traj = np.array(((1, 0, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1), (1, 0, 0), (0, 0, -1)))
-#
-# plot_simple_trajectory(test_traj, 'test')
+test_pts = np.array((
+    (0, 0, 0), 
+    (0, 0, 1), 
+    (3, 0, 0),
+    (2, -1, 0),
+    (1, 0, 0),
+    (0, 1, 0), 
+    (2, 0, 0)))
+# o = create_tree_edges(test_pts)
+# print(o)
+plot_tree(test_pts, 'test')

@@ -1,0 +1,19 @@
+\documentclass{minimal}
+\usepackage{mathtools}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\begin{document}
+  \[
+  L = \left\lfloor\log_d (1 - s(1 - d))\right\rfloor
+  \]
+  \[
+  E = s - \dfrac{1 - d^L}{1-d}
+  \]
+  \[
+  R = d^L + E - \left\lceil\dfrac{E}{d}\right\rceil
+  \]
+  
+  where \textit{d} is the number of dimensions (branching factor), \textit{s} is 
+  the total number of nodes, \textit{R} gives the maximum total number of roots. (\textit{d} must be an integer greater than 1; \textit{s} is an integer)
+\end{document}

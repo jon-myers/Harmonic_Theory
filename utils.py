@@ -403,6 +403,16 @@ def get_complement_shell(points):
 def is_contained_by(point, container):
     """Returns True if point is contained by container"""
     return np.all(point - container >= 0)
+    
+def containment_relationship(A, B):
+    """For two points, returns 0 if there is no containment relationship, 
+    1 if A contains B, and 2 if B contains A."""
+    if is_contained_by(B, A):
+        return 1
+    elif is_contained_by(A, B):
+        return 2
+    else:
+        return 0
 
 def are_roots(points):
     """Returns an array of boolean values assessing if each point is a root by
@@ -971,20 +981,238 @@ def tex_matrix_writer(matrix, path):
 def max_possible_roots(size, dims):
     """Given the number of points in a collection and dimensions of harmonic
     space it occupies, returns the maximum possible number of roots (or,
-    extremities)."""
-    pts_left = size - 1
-    roots = 1
-    while pts_left >= roots * dims:
-        pts_left -= roots * dims
-        roots *= dims
+    extremities), assuming dims is 2 or more."""
+    layers = math.floor(math.log(1 - size * (1 - dims), dims))
+    roots = dims ** layers 
+    pts_left = size - (1 - roots) / (1 - dims)
     add = pts_left - int(np.ceil(pts_left / dims))
     roots += add
     return roots
+    
+def possible_paths(A, B):
+    """Given two points in the same dimensionality, where A contains B, return 
+    all of the possible paths from A to B (not including the endpoints)."""
+    test = is_contained_by(B, A)
+    if not test:
+        print('error!!')
+    diff = B - A
+    moves = []
+    for i, steps in enumerate(diff):
+        for step in range(steps):
+            moves.append(i)
+    permutations = list(set(itertools.permutations(moves)))
+    paths = []
+    for perm in permutations:
+        path = A.reshape((1, *np.shape(A)))
+        for move in perm:
+            next_point = path[-1] + np.eye(np.shape(A)[-1], dtype=int)[move]
+            next_point = next_point.reshape((1, *np.shape(next_point)))
+            path = np.concatenate((path, next_point))
+        paths.append(path[1:-1])
+    return paths
+        
 
-out = max_possible_roots(15, 4)
-print(out)
+# possible_paths(np.array((0, 0, 0)), np.array((2, 1, 0)))
 
+def get_connected_indexes(points):
+    # first, are they all connected? if so, connected_indexes will have one 
+    # list in it, containing all tones. If not, connected indexes will have
+    # a seperate list for each subset of tones that are connected via adjacency.
+    indexes = np.arange(len(points))
+    connected_indexes = []
+    outer_ct = 0
+    out_size = 0
+    while out_size < np.shape(points)[0]:
+        accounted_for = list(itertools.chain.from_iterable(connected_indexes))
+        not_yet_accounted_for = indexes[np.invert(np.isin(indexes, accounted_for))]
+        connected_indexes.append([not_yet_accounted_for[0]])
+        ct = 0
+        while ct < len(connected_indexes[outer_ct]):
+            pt = points[connected_indexes[outer_ct][ct]]
+            adjacencies = np.nonzero(np.sum(np.abs(pt - points), axis=1) == 1)[0]
+            add_adjacencies = [i for i in adjacencies if i not in connected_indexes[outer_ct]]
+            if len(add_adjacencies) > 0:
+                for aa in add_adjacencies:
+                    connected_indexes[outer_ct].append(aa)
+            ct += 1
+        outer_ct += 1
+        out_size = len(list(i for i in itertools.chain.from_iterable(connected_indexes)))
+    return connected_indexes
+    
 
-for size in range(1, 10):
-    for dim in range(1, size):
-        print((size, dim), max_possible_roots(size, dim))
+def least_common_containee(A, B):
+    """For points A and B, return the simplest (lowest manhattan distance from 
+    origin) point that both points contain."""
+    set = np.array((A, B))
+    out = np.max(set, axis=0)
+    return out
+
+# test = np.array(((1, 0), (0, 1)))
+# least_common_containee(*test)
+
+def fix_collection(points):
+    """For a collection of tones, assess if it is a 'neighborhood'—-that all
+    points are connected by adjacency. If so, return the points and an array 
+    filled with ones, indicating that its a normal 'chord'. If not, finds 
+    'holes', adds them to the list of points, and returns an array with 1s for 
+    real tones, and 0s for 'holes', or 'ghost' tones."""
+    
+    connected_indexes = get_connected_indexes(points)
+        
+    if len(connected_indexes) == 1:
+        return points, np.zeros(len(points)) + 1
+    else:
+        # check each subset of tones against the other subsets for containments.
+        # If there are containments, add all possible path points as potential
+        # holes. 
+        combs = itertools.combinations(np.arange(len(connected_indexes)), 2)
+        potential_holes = []
+        for comb in combs:    
+            n_A = points[connected_indexes[comb[0]]]
+            n_B = points[connected_indexes[comb[1]]]
+            trials = cartesian_product(np.arange(len(n_A)), np.arange(len(n_B)))
+            crs = [containment_relationship(n_A[t[0]], n_B[t[1]]) for t in trials]
+            for i, cr in enumerate(crs):
+                if cr != 0:
+                    if cr == 1:
+                        start = n_A[trials[i][0]]
+                        end = n_B[trials[i][1]]
+                    if cr == 2:
+                        start = n_B[trials[i][1]]
+                        end = n_A[trials[i][0]]
+                    pps = possible_paths(start, end)
+                    pps_ = np.concatenate(pps)
+                    if len(pps_) > 0:
+                        if len(potential_holes) == 0:
+                            potential_holes = pps_
+                        else:
+                            potential_holes = np.concatenate((potential_holes, pps_))
+        unique, counts = npi.unique(potential_holes, return_count=True)
+        sorted_unique = unique[np.argsort(counts)[::-1]]
+        if len(sorted_unique) == 0:
+            pot_holes = []
+        else: 
+            pot_holes = sorted_unique[np.invert(npi.contains(points, sorted_unique))]
+            
+        # now try each 'pot_hole' (potential hole) to see if adding it to the 
+        # collection individually would bring all into one neighborhood. If none
+        # can do alone, try every set of two, then every set of three, etc., all
+        # the way up until you trying all pot holes altogether. If you can't 
+        # bring all together with the pot holes, bring together as many as 
+        # possible with as few as possible additions. From that point, you'll
+        # have to find the simplest possible 'common hole' that would be contained
+        # by the remaining sets ... 
+        pot_solutions = []
+        for num_add_tones in range(1, len(pot_holes) + 1):
+            if num_add_tones == 1:
+                for i, ph in enumerate(pot_holes):
+                    add_set = np.concatenate((points, np.expand_dims(ph, 0)))
+                    ci = get_connected_indexes(add_set)
+                    pot_solutions.append((np.array(i), len(ci)))
+            else:
+                combs = itertools.combinations(range(len(pot_holes)), num_add_tones)
+                for comb in combs:
+                    adds = pot_holes[np.array(comb)]
+                    add_set = np.concatenate((points, adds))
+                    ci = get_connected_indexes(add_set)
+                    pot_solutions.append((comb, len(ci)))
+        sorts = np.argsort([ps[1] for ps in pot_solutions], kind='stable') 
+        if len(pot_solutions) > 0:
+            if pot_solutions[sorts[0]][1] == 1:
+                add = np.array(pot_solutions[sorts[0]][0])
+                add_pts = pot_holes[add]
+                if add_pts.ndim != points.ndim:
+                    add_pts = np.expand_dims(add_pts, 0)
+                full_pts = np.concatenate((points, add_pts))
+                ones = np.zeros(len(points), dtype=int) + 1
+                if len(np.shape(add)) == 0:
+                    zeros = np.zeros(1, dtype=int)
+                else:
+                    zeros = np.zeros(len(add), dtype=int)
+                hole_array = np.concatenate((ones, zeros))
+                return full_pts, hole_array
+            else: 
+                add = np.array(pot_solutions[sorts[0]][0])
+                add_pts = pot_holes[add]
+                temp_full_pts = np.concatenate((points, add_pts))
+                connected_indexes = get_connected_indexes(temp_full_pts)
+
+        else: 
+            add_pts = []
+    
+        combs = itertools.combinations(np.arange(len(connected_indexes)), 2)
+        for comb in combs: 
+            lccs = []   
+            n_A = points[connected_indexes[comb[0]]]
+            n_B = points[connected_indexes[comb[1]]]
+            trials = cartesian_product(np.arange(len(n_A)), np.arange(len(n_B)))
+            for t in trials:
+                lcc = least_common_containee(n_A[t[0]], n_B[t[1]])
+                lccs.append(lcc)
+            min_ind = np.argmin([np.sum(i) for i in lccs])
+            A = n_A[trials[min_ind][0]]
+            B = n_B[trials[min_ind][1]]
+            lcc = lccs[min_ind]
+            path_from_A = possible_paths(A, lcc)[0]
+            path_from_B = possible_paths(B, lcc)[0]
+            adds = np.concatenate((np.expand_dims(lcc, 0), path_from_A, path_from_B))
+            if len(add_pts) == 0:
+                add_pts = adds
+            else:
+                add_pts = np.concatenate((add_pts, adds))
+        add_pts = npi.unique(add_pts)
+        full_pts = np.concatenate((points, add_pts))
+        ones = np.zeros(len(points), dtype=int) + 1
+        zeros = np.zeros(len(add_pts), dtype=int)
+        hole_array = np.concatenate((ones, zeros))
+        return full_pts, hole_array
+        # currently doesn't work when there are three seperate groups, in second category, 
+        # and you only have to connect a to b and b to c; not also  c to a 
+        
+        
+        
+        #     return np.concatenate(points, pot_solutions[sorts])    
+
+        
+        # print(pot_solutions)
+        # print([pot_holes[np.array(i[0])] for i in pot_solutions if i[1] == 1])
+
+            
+            
+            
+        
+        
+    
+    #
+        
+    # print(connected_indexes)
+    
+    
+# 
+# test = np.array(((0, 0), (0, 2), (1, 1)))
+# test = np.array((
+# (0, 0, 0, 0),
+# (0, 1, 0, 0),
+# (1, 0, 1, 0),
+# (1, 0, 0, -1),
+# (2, 0, 0, -1),
+# (0, -1, 1, 0)
+# ))
+
+test = np.array((
+(0, 0, 0),
+(2, 0, 0),
+(-2, 0, 1),
+(0, 1, 0),
+(1, 1, 0),
+(1, 0, 0)
+))
+full_pts, hole_array = fix_collection(test)
+print(full_pts, hole_array)
+# out = max_possible_roots(21, 4)
+# print(out)
+
+# 
+# for size in range(1, 10):
+#     for dim in range(2, size):
+#         print((size, dim), max_possible_roots(size, dim))
