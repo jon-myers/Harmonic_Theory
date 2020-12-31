@@ -527,13 +527,16 @@ def cast_to_ordinal(points):
     origin, secondly by average extent in each dimension, and thirdly by order
     of extent in each dimension of point with furthest manhattan
     distance from origin."""
-
+    
+    print(points)
     mins = np.min(points, axis=0)
     points = points - mins
     origin = np.repeat(0, np.shape(points)[-1])
 
     avg = np.average(points, axis=0)
+    # print(avg)
     avg_dup_indexes = indexes_of_duplicates(avg)
+    # print(avg_dup_indexes)
     if len(avg_dup_indexes) > 1:
         print('Potentially fatal: multiple avg dups!')
     elif len(avg_dup_indexes) == 1:
@@ -542,6 +545,7 @@ def cast_to_ordinal(points):
     points = points[:, avg_order]
 
     maxs = np.max(points) - np.max(points, axis=0)
+    # print(maxs)
     avg_dup_maxs = indexes_of_duplicates(maxs)
     if len(avg_dup_maxs) > 1:
         print('Potentially fatal: multiple avg maxs!')
@@ -554,6 +558,7 @@ def cast_to_ordinal(points):
     if len(shared_dims) > 2:
         print('Potentially fatal: shared dims greater than 2!')
     elif len(shared_dims) == 2:
+        # print(shared_dims)
         dims = np.arange(np.shape(points)[-1])
         non_shared_dims = dims[np.invert(npi.contains(shared_dims, dims))]
 
@@ -578,6 +583,8 @@ def cast_to_ordinal(points):
         max_mds = np.max(mds)
         if np.count_nonzero(mds == max_mds) > 1:
             print('Potentially fatal: shared max manhattan distances in C_dis')
+            print(mds)
+            print(C_dis)
         T_mmd = C_dis[np.argmax(mds)]
         dis_sorts = np.argsort(T_mmd[shared_dims])[::-1]
         sorts = dims[:]
@@ -591,7 +598,7 @@ def indexes_of_duplicates(arr):
     arr = np.array(arr)
     idx_sort = np.argsort(arr)
     sorted = arr[idx_sort]
-    vals, idx_start, count = np.unique(arr, return_counts=True, return_index=True)
+    vals, idx_start, count = np.unique(sorted, return_counts=True, return_index=True)
     res = np.split(idx_sort, idx_start[1:])
     vals = vals[count > 1]
     res = filter(lambda x: x.size > 1, res)
@@ -1170,49 +1177,3 @@ def fix_collection(points):
         # and you only have to connect a to b and b to c; not also  c to a 
         
         
-        
-        #     return np.concatenate(points, pot_solutions[sorts])    
-
-        
-        # print(pot_solutions)
-        # print([pot_holes[np.array(i[0])] for i in pot_solutions if i[1] == 1])
-
-            
-            
-            
-        
-        
-    
-    #
-        
-    # print(connected_indexes)
-    
-    
-# 
-# test = np.array(((0, 0), (0, 2), (1, 1)))
-# test = np.array((
-# (0, 0, 0, 0),
-# (0, 1, 0, 0),
-# (1, 0, 1, 0),
-# (1, 0, 0, -1),
-# (2, 0, 0, -1),
-# (0, -1, 1, 0)
-# ))
-
-test = np.array((
-(0, 0, 0),
-(2, 0, 0),
-(-2, 0, 1),
-(0, 1, 0),
-(1, 1, 0),
-(1, 0, 0)
-))
-full_pts, hole_array = fix_collection(test)
-print(full_pts, hole_array)
-# out = max_possible_roots(21, 4)
-# print(out)
-
-# 
-# for size in range(1, 10):
-#     for dim in range(2, size):
-#         print((size, dim), max_possible_roots(size, dim))
