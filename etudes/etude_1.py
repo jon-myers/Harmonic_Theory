@@ -42,6 +42,7 @@ t = make_random_trajectory(size-1)
 a = traj_to_absolute(t)
 primes = np.array((3, 5, 7))
 fund = 200
+# octs = TODO make octfinder !!
 c = json.load(open('etudes/chords.json', 'r'))
 chords = np.array([i['points'] for i in c])
 roots = [i['roots'] for i in c]
