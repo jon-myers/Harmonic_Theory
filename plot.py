@@ -5,13 +5,17 @@ from mpl_toolkits.mplot3d import proj3d
 from matplotlib.legend_handler import HandlerPatch
 import matplotlib.patches as mpatches
 import matplotlib.colors
+import matplotlib.tri as mtri
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from scipy.spatial.distance import cdist
 import numpy as np
-import itertools
+import itertools, ternary
+import random
+from fractions import Fraction
 from utils import traj_to_point_tuples, traj_to_points, get_segments, \
-                  get_ratios, is_contained_by, are_roots
+                  get_ratios, is_contained_by, are_roots, are_extremities, \
+                  get_layers
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -24,19 +28,24 @@ class Arrow3D(FancyArrowPatch):
         self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
         FancyArrowPatch.draw(self, renderer)
 
-def make_plot(pts, primes, path, octaves = None, draw_points = None,
+def make_plot(pts, path, primes=[2, 3, 7], octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
               origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
-              range_override=[0, 0], transparent=False, connect_color='grey',
+              range_override=[0, 0], transparent=True, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
-              file_type='pdf', opacity=0.5, root_layout=False, elev=16, azim=-72):
+              file_type='pdf', opacity=0.5, root_layout=False, elev=16, 
+              azim=-72, type='none', labels=False, label_offset=[-0.25, 0.2, 0],
+              layer_slices=[], layer_color='grey'):
 
-
+    
     c = matplotlib.colors.get_named_colors_mapping()
     if np.all(colors == None):
         colors = ['black' for i in range(len(pts))]
     else:
         colors = [c[i.lower()] for i in colors]
+        
+    if type != 'none':
+        colors = get_colors(pts, type)
     if np.all(octaves == None):
         octaves = np.repeat(0, len(primes))
     if np.all(draw_points == None):
@@ -55,7 +64,9 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     max = np.max(pts)
     if max < range_override[1]:
         max = range_override[1]
-
+    
+    for slice in layer_slices:
+        add_slice_to_ax(slice, ax, layer_color=layer_color)
 
     if origin == True:
         quiver_min = origin_range[0]
@@ -91,6 +102,10 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     for i, pt in enumerate(pts):
         ax.scatter(pt[0], pt[1], pt[2], color=colors[i], depthshade=False,
                    s=int(60 * dot_size))
+        if labels == True:
+            
+            l_pt = pt + np.array(label_offset)
+            ax.text(l_pt[0], l_pt[1], l_pt[2], str(i+1), fontsize=12)
     if draw_point_visible==True:
         for i, pt in enumerate(draw_points):
             ax.scatter(pt[0], pt[1], pt[2], color=c[draw_color],
@@ -102,6 +117,9 @@ def make_plot(pts, primes, path, octaves = None, draw_points = None,
     for seg in segments:
         ax.plot(seg[0], seg[1], seg[2], color=connect_color, alpha=opacity, lw=connect_size)
 
+    
+        
+    
     ax.set_xlim3d([min, max])
     ax.set_ylim3d([min, max])
     ax.set_zlim3d([min, max])
@@ -275,7 +293,7 @@ def create_tree_edges(points):
     return out
 
 
-def plot_tree(points, path, type='root'):
+def plot_tree(points, path, type='root', labels=False):
     """
 
     possible types: root, extremity, root_extremity, root_breakpoint,
@@ -287,8 +305,38 @@ def plot_tree(points, path, type='root'):
     for i in itertools.chain.from_iterable(edges):
         if i not in edge_order: edge_order.append(i)
     edge_order = np.array(edge_order)
-    colors = np.repeat(0, len(points))
+    colors = get_colors(points, type)
+    colors = [colors[i] for i in edge_order]
 
+    pos=graphviz_layout(G, prog='dot')
+    plt.figure(figsize=[3, 4])
+    nx.draw(G, pos, arrows=False, node_color=colors)
+    if labels == True:
+        numbers = [i+1 for i in range(len(points))]
+        numbers = [str(numbers[i]) for i in edge_order]
+        x_vals, y_vals = zip(*pos.values())
+        x_max = max(x_vals)
+        x_min = min(x_vals)
+        y_max = max(y_vals)
+        y_min = min(y_vals)
+        x_margin = 0.15 * (x_max - x_min)
+        y_max = max(y_vals)
+        y_min = min(y_vals)
+        y_margin = 0.1 * (y_max - y_min)
+        offset_pos = {}
+        label_pos = {}
+        for key in pos.keys():
+            offset_pos[key] = (pos[key][0] - 25, pos[key][1] + 5)
+            label_pos[key] = key+1
+            
+        nx.draw_networkx_labels(G, pos=offset_pos, labels=label_pos)
+        plt.xlim(x_min - x_margin, x_max + x_margin)
+        plt.ylim(y_min - y_margin, y_max + y_margin)
+    plt.savefig(path + '.pdf', transparent=True)
+    plt.close()
+
+def get_colors(points, type='root'):
+    colors = np.repeat(0, len(points))
     if type == 'root':
         colors = np.where(are_roots(points), 1, colors)
         colors = [['black', 'red'][i] for i in colors]
@@ -307,14 +355,9 @@ def plot_tree(points, path, type='root'):
         colors = np.where(are_extremities(points), 1, colors)
         colors = np.where(are_extremity_breakpoints(points), 2, colors)
         colors = [['black', 'mediumseagreen', 'cornflowerblue'][i] for i in colors]
+    else: print('Error: Unknown Type')
+    return colors
 
-    colors = [colors[i] for i in edge_order]
-
-    pos=graphviz_layout(G, prog='dot')
-    plt.figure(figsize=[3, 4])
-    nx.draw(G, pos, with_labels=False, arrows=False, node_color=colors)
-    plt.savefig(path + '.pdf', transparent=True)
-    plt.close()
 
 def plot_basic_hsl(points, path, type='root'):
     """
@@ -391,15 +434,54 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
 
     plt.savefig(path + '.' + file_type, transparent=transparent)
     plt.close()
+            
+def add_slice_to_ax(layer, ax, layer_color='grey'):
+    xy=np.array(((0, 0), (layer, 0), (0, layer)))
+    triang = mtri.Triangulation(xy[:,0], xy[:, 1])
+    z = [layer, 0, 0]
+    ax.plot_trisurf(triang, z, color=layer_color, alpha=0.5)
+    ax.plot([0, layer, 0, 0], [0, 0, layer, 0], [layer, 0, 0, layer], color='black')
+        
 
-test_pts = np.array((
-    (0, 0, 0), 
-    (0, 0, 1), 
-    (3, 0, 0),
-    (2, -1, 0),
-    (1, 0, 0),
-    (0, 1, 0), 
-    (2, 0, 0)))
-# o = create_tree_edges(test_pts)
-# print(o)
-plot_tree(test_pts, 'test')
+def plot_ternary(points, path):
+    """Plots the ternary slices of a collection of points. (Collection must 
+    be 'cast to ordinal', or at least non-negative, in order to work)."""
+    layers = get_layers(points)
+    fig, axes = plt.subplots(1, len(layers),figsize=[3*len(layers), 3])
+    if len(layers[0]) == 1:
+        axes[0].scatter(0, 0, color='black')
+    axes[0].xaxis.set_visible(False)
+    axes[0].yaxis.set_visible(False)
+    axes[0].set_title('Layer 0')
+    for i, layer in enumerate(layers[1:]):
+        
+        figure, tax = ternary.figure(scale=i+1, ax=axes[i+1])
+        lines = np.linspace(0, i+1, 500)
+        for line in lines:
+            tax.horizontal_line(line, color='grey', alpha=0.05)
+        tax.boundary(linewidth=1.0)
+        tax.gridlines(color='grey', multiple=1)
+        tax.clear_matplotlib_ticks()
+        
+        
+        tax.scatter(layer, color='black')
+        tax.set_title('Layer ' + str(i+1))
+    plt.savefig(path + '.pdf', transparent=True)
+    
+    
+# plot_ternary(points, 'ternary_test')
+    
+# scale=2
+# figure, tax = ternary.figure(scale=scale)
+# tax.boundary(linewidth=2.0)
+# tax.gridlines(color='grey', multiple=1)
+# 
+# # tax.ticks(axis='lbr', linewidth=1)
+# tax.clear_matplotlib_ticks()
+# points = [(1, 1, 0)]
+# tax.scatter(points)
+# 
+# ternary.plt.show()
+
+
+    

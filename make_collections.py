@@ -33,7 +33,7 @@ def make_branches(max_tones, dims):
 
 def make_chords(max_tones, dims):
     chords = [np.array([[np.repeat(0, dims)]])]
-    for tones in range(max_tones):
+    for tones in range(max_tones-1):
         seeds = chords[-1]
         sub_chords = None
         for seed in seeds:
@@ -53,7 +53,7 @@ def make_chords(max_tones, dims):
         sub_chords = np.array([reorder_points(i) for i in sub_chords])
         sub_chords = npi.unique(sub_chords)
         chords.append(sub_chords)
-    return chords
+    return chords[1:]
 
 def pack_stats(chords, path):
     objs = []
@@ -75,15 +75,23 @@ def pack_stats(chords, path):
         obj['transposition_shell_proportion'] = len(chord) / len(t_shell)
         obj['multipath_shell_size'] = len(m_shell)
         obj['multipath_shell_proportion'] = len(chord) / len(m_shell)
-        obj['roots'] = len(roots)
+        obj['roots'] = roots
         obj['mean_root_distance'] = mean_root_distance(chord)
         obj['mean_root_angle'] = mean_root_angle(chord)
 
         objs.append(obj)
     json.dump(objs, open(path, 'w'), cls=NpEncoder)
 
-chords = make_chords(4, 3)
+chords = make_chords(7, 3)
 
-c = chords[-1]
+# print(chords[:2])
+pack_stats(chords[-1], 'etudes/chords.json')
+# 
+# json.dump(chords, open(''))
+# test_chords = json.dump(chords, open('test.json', 'w'), cls=NpEncoder)
+# # for chord in chords: 
+# #     print(chord)
+# # c = chords[-1]
+# # print(len(c))
 
-pack_stats(c, 'test.json')
+# pack_stats(c, 'test.json')

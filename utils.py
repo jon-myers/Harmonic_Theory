@@ -325,6 +325,13 @@ def get_transposition_shell(points):
     points that make up its rotation shell."""
     dims = np.shape(points)[-1]
     permutations = np.array([i for i in itertools.permutations(range(dims))])
+    # print(np.shape(points))
+    # print(np.shape(permutations))
+    # try:
+    #     perms = points[:, permutations]
+    # except:
+    #     print(points, permutations)
+    #     perms = points[0][:, permutations]
     perms = points[:, permutations]
     transpositions = perms.transpose((1, 0, *range(2, len(np.shape(perms)))))
     all_points = np.concatenate(transpositions)
@@ -527,38 +534,34 @@ def cast_to_ordinal(points):
     origin, secondly by average extent in each dimension, and thirdly by order
     of extent in each dimension of point with furthest manhattan
     distance from origin."""
-    
-    print(points)
+
     mins = np.min(points, axis=0)
     points = points - mins
     origin = np.repeat(0, np.shape(points)[-1])
 
     avg = np.average(points, axis=0)
-    # print(avg)
     avg_dup_indexes = indexes_of_duplicates(avg)
-    # print(avg_dup_indexes)
-    if len(avg_dup_indexes) > 1:
-        print('Potentially fatal: multiple avg dups!')
-    elif len(avg_dup_indexes) == 1:
+    # if len(avg_dup_indexes) > 1:
+    #     print('Potentially fatal: multiple avg dups!')
+    if len(avg_dup_indexes) == 1:
         avg_dup_indexes = avg_dup_indexes[0]
     avg_order = np.argsort(-1 * avg)
     points = points[:, avg_order]
 
     maxs = np.max(points) - np.max(points, axis=0)
-    # print(maxs)
     avg_dup_maxs = indexes_of_duplicates(maxs)
-    if len(avg_dup_maxs) > 1:
-        print('Potentially fatal: multiple avg maxs!')
-    elif len(avg_dup_maxs) == 1:
+    # if len(avg_dup_maxs) > 1:
+    #     print('Potentially fatal: multiple avg maxs!')
+    if len(avg_dup_maxs) == 1:
         avg_dup_maxs = avg_dup_maxs[0]
     max_order = np.argsort(maxs)
     points = points[:, max_order]
 
     shared_dims = np.intersect1d(avg_dup_indexes, avg_dup_maxs)
-    if len(shared_dims) > 2:
-        print('Potentially fatal: shared dims greater than 2!')
-    elif len(shared_dims) == 2:
-        # print(shared_dims)
+    # if len(shared_dims) > 2:
+    #     print('Potentially fatal: shared dims greater than 2!')
+    #     print(points, '\n')
+    if len(shared_dims) == 2:
         dims = np.arange(np.shape(points)[-1])
         non_shared_dims = dims[np.invert(npi.contains(shared_dims, dims))]
 
@@ -579,17 +582,19 @@ def cast_to_ordinal(points):
         inverted_filter = npi.contains(np.array(inverted_inds), np.arange(len(points)))
         filter = np.invert(np.logical_or(equal_filter,inverted_filter))
         C_dis = points[filter]
-        mds = np.sum(C_dis, axis=1)
-        max_mds = np.max(mds)
-        if np.count_nonzero(mds == max_mds) > 1:
-            print('Potentially fatal: shared max manhattan distances in C_dis')
-            print(mds)
-            print(C_dis)
-        T_mmd = C_dis[np.argmax(mds)]
-        dis_sorts = np.argsort(T_mmd[shared_dims])[::-1]
-        sorts = dims[:]
-        sorts[shared_dims] = dis_sorts
-        points = points[:, sorts]
+        if len(C_dis > 0):
+            mds = np.sum(C_dis, axis=1)
+            max_mds = np.max(mds)
+            # if np.count_nonzero(mds == max_mds) > 1:
+            #     print('Potentially fatal: shared max manhattan distances in C_dis')
+            #     print(mds)
+            #     print(C_dis)
+            T_mmd = C_dis[np.argmax(mds)]
+            dis_sorts = np.argsort(T_mmd[shared_dims])[::-1]
+            sorts = dims[:]
+            sorts[shared_dims] = dis_sorts
+            sorts = np.argsort(sorts)
+            points = points[:, sorts]
     return points
 
 def indexes_of_duplicates(arr):
@@ -1176,4 +1181,67 @@ def fix_collection(points):
         # currently doesn't work when there are three seperate groups, in second category, 
         # and you only have to connect a to b and b to c; not also  c to a 
         
-        
+
+def get_layers(points):
+    """For a 3d collection of tones, splits the points into layers. Returns a 
+    list of lists of coordinates, one list for each layer."""
+    
+    # first split into layers
+    sums = np.sum(points, axis=1)
+    max_layer = np.max(sums)
+    layers = [points[sums==layer] for layer in range(max_layer+1)]
+    return layers
+
+def get_layer_skew(points):
+    """Given a 3d collection of tones, return a array of arrays, one for each 
+    layer, that describes the relative skew of that layer toward each dimension."""
+    layers = get_layers(points)
+    skew=[]
+    for i, layer in enumerate(layers):
+        sk = np.sum(layer, axis=0)
+        if np.sum(sk) != 0:
+            sk = sk / np.sum(sk)
+        skew.append(sk)
+    return(np.array(skew))
+
+    
+def root_salience(points, scaled=True, indexes=False):
+    """Given a chord / neighborhood, return the roots, the number of tones 
+    that each root contains, and (if indexes==True), the indexes of each root. 
+    By default, the 'weight' of each root is scaled by dividing by the total 
+    number of non-root points."""
+    
+    roots = points[are_roots(points)]
+    non_roots = points[np.invert(are_roots(points))]
+    weight = []
+    for r in roots:
+        ct = 0
+        for nr in non_roots:
+            if is_contained_by(nr, r):
+                ct += 1
+        weight.append(ct)
+    if scaled:
+        weight = [i/len(non_roots) for i in weight]
+    if indexes:
+        return roots, weight, np.nonzero(are_roots(points))[0]
+    else: 
+        return roots, weight
+# 
+# t = np.array(((1, 0, 0), (0, 1, 0), (1, 1, 0), (0, 1, -1)))
+# print(cast_to_ordinal(t))
+# test = np.array((
+# (1, 0, 0),
+# (1, 0, 1),
+# (0, 0, 1),
+# (0, 1, 1),
+# (1, 1, 1),
+# (2, 1, 1),
+# (2, 1, 0),
+# (2, 2, 0),
+# (1, 1, 2),
+# (1, 2, 1)
+# ))
+# 
+# print(root_weight(test, indexes=True))
+
+    
