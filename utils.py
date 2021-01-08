@@ -403,9 +403,9 @@ def get_complement_shell(points):
 def is_contained_by(point, container):
     """Returns True if point is contained by container"""
     return np.all(point - container >= 0)
-    
+
 def containment_relationship(A, B):
-    """For two points, returns 0 if there is no containment relationship, 
+    """For two points, returns 0 if there is no containment relationship,
     1 if A contains B, and 2 if B contains A."""
     if is_contained_by(B, A):
         return 1
@@ -983,14 +983,14 @@ def max_possible_roots(size, dims):
     space it occupies, returns the maximum possible number of roots (or,
     extremities), assuming dims is 2 or more."""
     layers = math.floor(math.log(1 - size * (1 - dims), dims))
-    roots = dims ** layers 
+    roots = dims ** layers
     pts_left = size - (1 - roots) / (1 - dims)
     add = pts_left - int(np.ceil(pts_left / dims))
     roots += add
     return roots
-    
+
 def possible_paths(A, B):
-    """Given two points in the same dimensionality, where A contains B, return 
+    """Given two points in the same dimensionality, where A contains B, return
     all of the possible paths from A to B (not including the endpoints)."""
     test = is_contained_by(B, A)
     if not test:
@@ -1010,12 +1010,12 @@ def possible_paths(A, B):
             path = np.concatenate((path, next_point))
         paths.append(path[1:-1])
     return paths
-        
+
 
 # possible_paths(np.array((0, 0, 0)), np.array((2, 1, 0)))
 
 def get_connected_indexes(points):
-    # first, are they all connected? if so, connected_indexes will have one 
+    # first, are they all connected? if so, connected_indexes will have one
     # list in it, containing all tones. If not, connected indexes will have
     # a seperate list for each subset of tones that are connected via adjacency.
     indexes = np.arange(len(points))
@@ -1038,10 +1038,10 @@ def get_connected_indexes(points):
         outer_ct += 1
         out_size = len(list(i for i in itertools.chain.from_iterable(connected_indexes)))
     return connected_indexes
-    
+
 
 def least_common_containee(A, B):
-    """For points A and B, return the simplest (lowest manhattan distance from 
+    """For points A and B, return the simplest (lowest manhattan distance from
     origin) point that both points contain."""
     set = np.array((A, B))
     out = np.max(set, axis=0)
@@ -1052,22 +1052,22 @@ def least_common_containee(A, B):
 
 def fix_collection(points):
     """For a collection of tones, assess if it is a 'neighborhood'—-that all
-    points are connected by adjacency. If so, return the points and an array 
-    filled with ones, indicating that its a normal 'chord'. If not, finds 
-    'holes', adds them to the list of points, and returns an array with 1s for 
+    points are connected by adjacency. If so, return the points and an array
+    filled with ones, indicating that its a normal 'chord'. If not, finds
+    'holes', adds them to the list of points, and returns an array with 1s for
     real tones, and 0s for 'holes', or 'ghost' tones."""
-    
+
     connected_indexes = get_connected_indexes(points)
-        
+
     if len(connected_indexes) == 1:
         return points, np.zeros(len(points)) + 1
     else:
         # check each subset of tones against the other subsets for containments.
         # If there are containments, add all possible path points as potential
-        # holes. 
+        # holes.
         combs = itertools.combinations(np.arange(len(connected_indexes)), 2)
         potential_holes = []
-        for comb in combs:    
+        for comb in combs:
             n_A = points[connected_indexes[comb[0]]]
             n_B = points[connected_indexes[comb[1]]]
             trials = cartesian_product(np.arange(len(n_A)), np.arange(len(n_B)))
@@ -1091,17 +1091,17 @@ def fix_collection(points):
         sorted_unique = unique[np.argsort(counts)[::-1]]
         if len(sorted_unique) == 0:
             pot_holes = []
-        else: 
+        else:
             pot_holes = sorted_unique[np.invert(npi.contains(points, sorted_unique))]
-            
-        # now try each 'pot_hole' (potential hole) to see if adding it to the 
+
+        # now try each 'pot_hole' (potential hole) to see if adding it to the
         # collection individually would bring all into one neighborhood. If none
         # can do alone, try every set of two, then every set of three, etc., all
-        # the way up until you trying all pot holes altogether. If you can't 
-        # bring all together with the pot holes, bring together as many as 
+        # the way up until you trying all pot holes altogether. If you can't
+        # bring all together with the pot holes, bring together as many as
         # possible with as few as possible additions. From that point, you'll
         # have to find the simplest possible 'common hole' that would be contained
-        # by the remaining sets ... 
+        # by the remaining sets ...
         pot_solutions = []
         for num_add_tones in range(1, len(pot_holes) + 1):
             if num_add_tones == 1:
@@ -1116,7 +1116,7 @@ def fix_collection(points):
                     add_set = np.concatenate((points, adds))
                     ci = get_connected_indexes(add_set)
                     pot_solutions.append((comb, len(ci)))
-        sorts = np.argsort([ps[1] for ps in pot_solutions], kind='stable') 
+        sorts = np.argsort([ps[1] for ps in pot_solutions], kind='stable')
         if len(pot_solutions) > 0:
             if pot_solutions[sorts[0]][1] == 1:
                 add = np.array(pot_solutions[sorts[0]][0])
@@ -1131,20 +1131,26 @@ def fix_collection(points):
                     zeros = np.zeros(len(add), dtype=int)
                 hole_array = np.concatenate((ones, zeros))
                 return full_pts, hole_array
-            else: 
+            else:
                 add = np.array(pot_solutions[sorts[0]][0])
                 add_pts = pot_holes[add]
+                if add_pts.ndim == 1:
+                    add_pts = np.expand_dims(add_pts, 0)
                 temp_full_pts = np.concatenate((points, add_pts))
                 connected_indexes = get_connected_indexes(temp_full_pts)
 
-        else: 
+        else:
             add_pts = []
-    
+
+        if 'temp_full_pts' not in locals():
+            temp_full_pts = points
+
         combs = itertools.combinations(np.arange(len(connected_indexes)), 2)
-        for comb in combs: 
-            lccs = []   
-            n_A = points[connected_indexes[comb[0]]]
-            n_B = points[connected_indexes[comb[1]]]
+        for comb in combs:
+            lccs = []
+            # print(points, connected_indexes, comb)
+            n_A = temp_full_pts[connected_indexes[comb[0]]]
+            n_B = temp_full_pts[connected_indexes[comb[1]]]
             trials = cartesian_product(np.arange(len(n_A)), np.arange(len(n_B)))
             for t in trials:
                 lcc = least_common_containee(n_A[t[0]], n_B[t[1]])
@@ -1161,58 +1167,34 @@ def fix_collection(points):
             else:
                 add_pts = np.concatenate((add_pts, adds))
         add_pts = npi.unique(add_pts)
-        full_pts = np.concatenate((points, add_pts))
+        full_pts = np.concatenate((temp_full_pts, add_pts))
         ones = np.zeros(len(points), dtype=int) + 1
-        zeros = np.zeros(len(add_pts), dtype=int)
+        zeros = np.zeros(len(full_pts) - len(points), dtype=int)
         hole_array = np.concatenate((ones, zeros))
         return full_pts, hole_array
-        # currently doesn't work when there are three seperate groups, in second category, 
-        # and you only have to connect a to b and b to c; not also  c to a 
-        
-        
-        
-        #     return np.concatenate(points, pot_solutions[sorts])    
 
-        
-        # print(pot_solutions)
-        # print([pot_holes[np.array(i[0])] for i in pot_solutions if i[1] == 1])
+        # currently not sure how to handle, for example, when there are three
+        # seperate groups, and it could be reduced by connecting A to B and B to
+        # C, but should you also connect B to C (especially if it is equally
+        # easy a connection to make?
 
-            
-            
-            
-        
-        
-    
-    #
-        
-    # print(connected_indexes)
-    
-    
-# 
-# test = np.array(((0, 0), (0, 2), (1, 1)))
+
+
+
 # test = np.array((
-# (0, 0, 0, 0),
-# (0, 1, 0, 0),
-# (1, 0, 1, 0),
-# (1, 0, 0, -1),
-# (2, 0, 0, -1),
-# (0, -1, 1, 0)
+# (0, 0, 0),
+# (2, 0, 0),
+# (-2, 0, 1),
+# (0, 1, 0),
+# (1, 1, 0),
+# (1, 0, 0)
 # ))
-
-test = np.array((
-(0, 0, 0),
-(2, 0, 0),
-(-2, 0, 1),
-(0, 1, 0),
-(1, 1, 0),
-(1, 0, 0)
-))
-full_pts, hole_array = fix_collection(test)
-print(full_pts, hole_array)
+# full_pts, hole_array = fix_collection(test)
+# print(full_pts, hole_array)
 # out = max_possible_roots(21, 4)
 # print(out)
 
-# 
+#
 # for size in range(1, 10):
 #     for dim in range(2, size):
 #         print((size, dim), max_possible_roots(size, dim))

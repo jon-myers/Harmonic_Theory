@@ -11,7 +11,7 @@ from scipy.spatial.distance import cdist
 import numpy as np
 import itertools
 from utils import traj_to_point_tuples, traj_to_points, get_segments, \
-                  get_ratios, is_contained_by, are_roots
+                  get_ratios, is_contained_by, are_roots, fix_collection
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -392,14 +392,74 @@ def plot_simple_trajectory(traj, path, root=None, range_override=[-1, 3],
     plt.savefig(path + '.' + file_type, transparent=transparent)
     plt.close()
 
-test_pts = np.array((
-    (0, 0, 0), 
-    (0, 0, 1), 
-    (3, 0, 0),
-    (2, -1, 0),
-    (1, 0, 0),
-    (0, 1, 0), 
-    (2, 0, 0)))
-# o = create_tree_edges(test_pts)
-# print(o)
-plot_tree(test_pts, 'test')
+
+def make_4d_plot(points, path):
+    """Makes a series of plots for each 'slice' of a 4 dimensional harmonic
+    space lattice. That is, makes a 3d plot for all of the points in which the
+    4th dimension is 0; a 3d plot for all of the poitns in which the 4th
+    dimension is 1; etc. Plots will be presented next to each other horizontally,
+    with adjacent slice plot points transparent."""
+    # how many of the 4th axis?
+    slice_vals = np.unique(points[:, -1])
+    slice_vals = np.arange(np.min(slice_vals), np.max(slice_vals) + 1)
+    slices = [points[points[:, -1] == i][:, :-1] for i in slice_vals]
+    figsize = [3 * len(slice_vals), 3]
+    fig = plt.figure(figsize=figsize)
+    all_segments = [get_segments(slice) for slice in slices]
+    axis_range = [np.min(points), np.max(points)]
+
+    for i, slice in enumerate(slice_vals):
+        ax = fig.add_subplot(1, len(slice_vals), i+1, projection='3d')
+        ax.view_init(elev=16, azim=-72)
+        other_indexes = [ind for ind in range(len(slice_vals)) if ind != i]
+
+        for oi in other_indexes:
+            for seg in all_segments[oi]:
+                ax.plot(seg[0], seg[1], seg[2], color='lightgrey', alpha=0.5, lw=2)
+            for pt in slices[oi]:
+                ax.scatter(*pt, color='lightgrey', depthshade=False, s=int(30))
+
+        for seg in all_segments[i]:
+            ax.plot(seg[0], seg[1], seg[2], color='black', alpha=0.5, lw=2)
+        for pt in slices[i]:
+            ax.scatter(*pt, color='black', depthshade=False, s=int(30))
+
+        ax.set_axis_off()
+        ax.set_xlim3d(axis_range)
+        ax.set_ylim3d(axis_range)
+        ax.set_zlim3d(axis_range)
+
+    plt.savefig(path + '.pdf', transparent=True)
+    plt.close()
+
+
+
+
+test_points = np.array((
+    (0, 0, 0, 0),
+    (0, 1, 0, 0),
+    (1, 0, 1, 0),
+    (1, 0, 0, -1),
+    (2, 0, 0, -1),
+    (0, -1, 1, 0)
+))
+
+points, hole_arr = fix_collection(test_points)
+
+permutations = np.array([i for i in itertools.permutations(range(4))])
+for i, perm in enumerate(permutations):
+    points = points[:, perm]
+
+    make_4d_plot(points, 'perms/'+str(i))
+
+# test_pts = np.array((
+#     (0, 0, 0),
+#     (0, 0, 1),
+#     (3, 0, 0),
+#     (2, -1, 0),
+#     (1, 0, 0),
+#     (0, 1, 0),
+#     (2, 0, 0)))
+# # o = create_tree_edges(test_pts)
+# # print(o)
+# plot_tree(test_pts, 'test')
