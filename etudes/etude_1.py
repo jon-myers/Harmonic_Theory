@@ -35,7 +35,7 @@ def traj_to_absolute(traj):
 
 def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
     oct = np.array(oct)
-    
+
     if len(np.shape(hsv)) == 2:
         sub_prod = (primes ** hsv) * (2.0 ** (hsv * oct))
         freq = fund * np.prod(sub_prod, axis=1)
@@ -54,11 +54,11 @@ def octave_finder(chord, fund, primes, lims = (50, 50 * (2 ** 5))):
         if np.all(np.min(freq) >= lims[0]) and np.all(np.max(freq) <= lims[1]):
             seive[i] = True
     possible_octs = cp[seive]
-    
+
     return possible_octs
 
-def make_chord_sequence(size, fund=200, primes=(3.0, 5.0, 7.0), min_comma=100,
-                        lims=(50, 50*(2**5))):
+def make_chord_sequence(size, fund=200, primes=(3.0, 5.0, 7.0), min_comma=40,
+                        lims=(100, 100*(2**3)), chord_size=5):
     primes = np.array(primes)
     t = make_random_trajectory(size-1)
     a = traj_to_absolute(t)
@@ -78,10 +78,10 @@ def make_chord_sequence(size, fund=200, primes=(3.0, 5.0, 7.0), min_comma=100,
         diff = a[i] - root
         chords[i] += diff
         octs = octave_finder(chords[i], fund, primes, lims)
-        
-        # minimize commas by filtering list of possible octaves even 
-        # further to stop including those whose minimum of combinatorial 
-        # magnitude differences of frequencies is above some threshold. 
+
+        # minimize commas by filtering list of possible octaves even
+        # further to stop including those whose minimum of combinatorial
+        # magnitude differences of frequencies is above some threshold.
         min_cents = []
         for oct in octs:
             freqs = hsv_to_freq(chords[i], primes, fund, oct)
@@ -90,13 +90,13 @@ def make_chord_sequence(size, fund=200, primes=(3.0, 5.0, 7.0), min_comma=100,
             min = np.min(np.abs(diffs))
             min_cents.append(min)
         octs = octs[np.array(min_cents) >= min_comma]
-        
+
         # choose between the different octs, randomly
         oct = octs[np.random.randint(len(octs))]
         oct_shifts.append(oct)
     return chords, np.array(oct_shifts)
-    
-        
+
+
 
 fund = 200
 primes = np.array((3.0, 5.0, 7.0))
@@ -106,6 +106,6 @@ all_freq = []
 for i, chord in enumerate(chords):
     freqs = hsv_to_freq(chord, primes, fund, oct_shifts[i])
     all_freq.append(freqs)
-    
+
 all_freq = np.round(all_freq, 2)
 json.dump(all_freq, open('etudes/chord_sequence.json', 'w'), cls=NpEncoder)
