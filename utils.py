@@ -291,10 +291,14 @@ def is_fully_connected(points):
         full_truth.append(np.any(truth_array))
     return np.all(full_truth)
 
+def flatten(iterable):
+    return list(itertools.chain.from_iterable(iterable))
 
 def sub_branches(points):
     """Given the points that make up a chord, returns the list of all subsets of
-    those points that form branches."""
+    those points that form branches. If lens == true, the returned array is 
+    nested into groups by chord size, in decreasing order. 
+    """
     out = []
     size = len(points)
     while True:
@@ -305,20 +309,41 @@ def sub_branches(points):
         size -= 1
         if size == 1:
             break
-    return [points[i] for i in out]
+    sb = [points[i] for i in out]    
+    return sb
 
-def unique_sub_branches(points):
+def unique_sub_branches(points, count=False):
     """If given points, gets sub_branches, transfers all to ordinal, splits
     into groups based on length, and remove duplicates from each of those groups,
     before putting all unique sub branches back into an output array that is
     returned"""
     # TODO make this avoid getting the sub branches twice, by letting the input
     # be sub_branches or points.
-    sb = [cast_to_ordinal(i) for i in sub_branches(points)]
-    lens = list(set([len(i) for i in sb]))
-    sb_groups = [npi.unique(np.array([i for i in sb if len(i) == j])) for j in lens]
-    out = [i for i in itertools.chain.from_iterable(sb_groups)]
-    return out
+    sb = [reorder_points(cast_to_ordinal(i)) for i in sub_branches(points)]
+    lens = list(set([len(i) for i in sb]))[::-1]
+    if count == True:
+        sb_groups = [np.array([i for i in sb if len(i) == j]) for j in lens]
+        usb_groups = [npi.unique(i, return_index=True, return_count=True) for i in sb_groups]
+        usb = list(i[0] for i in usb_groups)
+        idx = list(i[1] for i in usb_groups)
+        cts = list(i[2] for i in usb_groups)
+        
+        all_matches = []
+        ct = 0
+        for l_i in range(len(sb_groups)):
+            for unq in usb[l_i]:
+                matches = []
+                for i, sb in enumerate(sb_groups[l_i]):
+                    intersect = npi.intersection(unq, sb)
+                    if len(intersect) == len(unq):
+                        matches.append(ct + i)
+                all_matches.append(matches)
+            ct += len(sb_groups[l_i])
+        return flatten(usb), all_matches
+    else:
+        usb_groups = [npi.unique(np.array([i for i in sb if len(i) == j])) for j in lens]
+        usb = flatten(usb_groups)
+        return usb
 
 def get_transposition_shell(points):
     """Given the points that make up a branch rooted at the origin, returns the
@@ -1249,6 +1274,3 @@ def root_salience(points, scaled=True, indexes=False):
 # ))
 #
 # print(root_weight(test, indexes=True))
-
-
-print(hz_to_cents(187.5, 164.06))

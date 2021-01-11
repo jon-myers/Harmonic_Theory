@@ -109,3 +109,30 @@ for i, chord in enumerate(chords):
 
 all_freq = np.round(all_freq, 2)
 json.dump(all_freq, open('etudes/chord_sequence.json', 'w'), cls=NpEncoder)
+
+# sb = sub_branches(chords[0])
+for chord in chords:
+    usb, matches = unique_sub_branches(chord, count=True)
+    lens = [len(i) for i in matches]
+    # print(lens)
+    max_lens = max([len(i) for i in matches[:-1]])
+    print(max_lens)
+    if max_lens > 4:
+        print(chord)
+
+    
+    
+    # print()
+# usb = flatten(usb)
+# idx = [cast_to_ordinal(i) for i in sb]
+# print(idx, '\n\n', cts, '\n\n')
+# for i in range(len(usb)):
+#     print(usb[i])
+#     print(idx[i])
+#     print(cts[i])
+#     print()
+# for i in range(len(usb)):
+# #     print(usb[i])
+# for i in range(len(sb)):
+#     print(sb[i], '\n\n')
+#     print(usb[i], '\n\n\n')

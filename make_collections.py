@@ -82,7 +82,7 @@ def pack_stats(chords, path):
         objs.append(obj)
     json.dump(objs, open(path, 'w'), cls=NpEncoder)
 
-chords = make_chords(5, 3)
+chords = make_chords(7, 3)
 
 # print(chords[:2])
 pack_stats(chords[-1], 'etudes/chords.json')
