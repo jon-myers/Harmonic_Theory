@@ -373,6 +373,7 @@ def get_multipath_shell(points):
     return np.unique(multipath_shell, axis=0)
 
 def get_transpositions(points):
+    points = np.array(points)
     dims = np.shape(points)[-1]
     permutations = np.array([i for i in itertools.permutations(range(dims))])
     perms = points[:, permutations]
@@ -1257,20 +1258,169 @@ def root_salience(points, scaled=True, indexes=False):
         return roots, weight, np.nonzero(are_roots(points))[0]
     else:
         return roots, weight
-#
-# t = np.array(((1, 0, 0), (0, 1, 0), (1, 1, 0), (0, 1, -1)))
-# print(cast_to_ordinal(t))
-# test = np.array((
-# (1, 0, 0),
-# (1, 0, 1),
-# (0, 0, 1),
-# (0, 1, 1),
-# (1, 1, 1),
-# (2, 1, 1),
-# (2, 1, 0),
-# (2, 2, 0),
-# (1, 1, 2),
-# (1, 2, 1)
-# ))
-#
-# print(root_weight(test, indexes=True))
+
+
+def dc_alg_step(size, counts=None, alpha=1.0):
+    """Performs a single iteration of James Tenney's Dissonant Counterpoint 
+    Algorithm. Randomly chooses an index from range(size) with weights based on 
+    the previous 'counts'. The process starts off with counts all = 1. Each time
+    an element is chosen, its count goes down to 1. Each time an element is not 
+    chosen, its count is incremented up by one. 
+    
+    Parameters: 
+        size (integer): the number of elements to choose between.
+        counts (array of ints >= 1): the counts of each element.
+        alpha (float): the 'sharpness' of the weighting. 
+
+    """
+    if np.all(counts == None):
+        counts = np.zeros(size, dtype=int) + 1
+    
+    weight = counts**alpha
+    p = weight / np.sum(weight)
+    choice_index = np.random.choice(np.arange(size), p=p)
+    counts += 1
+    counts[choice_index] = 1
+    return choice_index, counts
+
+
+def dc_alg(size, epochs, counts=None, alpha=1.0, return_counts=False):
+    """Iterates through multiple dc_alg_steps, returning the list of element
+    indexes, and (if requested) the number of counts at the end. 
+    
+    Parameters:
+        size (integer): the number of elements to choose between.
+        counts (array of ints >= 1): the counts of each element.
+        alpha (float > 0.0): the 'sharpness' of the weighting.
+        epochs (integer): the number of times to iterate through the dc_alg."""
+        
+    choices = []
+    for e in range(epochs):
+        choice, counts = dc_alg_step(size, counts, alpha)
+        choices.append(choice)
+    choices = np.array(choices)
+    if return_counts:
+        return choices, counts
+    else:
+        return choices
+
+
+def group_dc_alg_step(groups, group_counts=None, element_counts=None, alpha=1.0):
+    """dc_alg, but for groups of elements. 
+    
+    Parameters:
+        groups (array of nested arrays, each filled with ints)
+    """
+    if np.all(group_counts == None):
+        group_counts = np.zeros(len(groups), dtype=int) + 1
+    if np.all(element_counts == None):
+        element_counts = np.zeros(np.max(flatten(groups))+1, dtype=int) + 1
+    
+    # avg of element counts for each group
+    group_avg_ec = []
+    for group in groups:
+        avg = np.mean([element_counts[i] for i in group])
+        group_avg_ec.append(avg)
+    group_avg_ec = np.array(group_avg_ec)
+    weight = group_counts * group_avg_ec
+    p = weight/ np.sum(weight)
+    choice_index = np.random.choice(np.array(len(groups)), p=p)
+    choice = groups[choice_index]
+    group_counts += 1
+    group_counts[choice_index] = 1
+    element_counts += 1
+    for i in choice:
+        element_counts[i] = 1
+    return choice_index, group_counts, element_counts
+    
+def group_dc_alg(groups, epochs, group_counts=None, element_counts=None, 
+                 alpha=1.0, return_counts=False):
+    cis = []
+    gc = group_counts
+    ec = element_counts
+    for e in range(epochs):
+        choice_index, gc, ec = group_dc_alg_step(groups, gc, ec, alpha)
+        cis.append(choice_index)
+    if return_counts:
+        return [groups[i] for i in cis], gc, ec
+    else:
+        return [groups[i] for i in cis]
+
+def make_random_trajectory(length, max_step=1, dims=3, circular=True):
+    """
+
+    parameters:
+        length (integer, if circular==True, must be even)
+
+    """
+    steps = np.zeros((length, dims), dtype=int)
+    indexes = np.random.randint(dims, size=length)
+    steps[np.arange(length), indexes] = np.random.randint(-1, 2, size=length)
+    if circular == True:
+        mirror = -1 * steps[:int(length/2)]
+        np.random.shuffle(mirror)
+        steps[int(length/2):] = mirror
+    return steps
+
+
+def traj_to_absolute(traj):
+    origin = np.zeros(shape=(1, np.shape(traj)[-1]), dtype=int)
+    return np.concatenate(((origin), np.cumsum(traj, axis=0)))
+
+
+def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
+    oct = np.array(oct)
+    if len(np.shape(hsv)) == 2:
+        # print(hsv)
+        sub_prod = (primes ** hsv) * (2.0 ** (hsv * oct))
+        freq = fund * np.prod(sub_prod, axis=1)
+    elif len(np.shape(hsv)) == 3:
+        sub_prod = (primes ** hsv) * (2.0 ** (hsv * oct))
+        freq = fund * np.prod(sub_prod, axis=2)
+        
+    else:
+        freq = fund * np.prod((primes ** hsv) * (2.0 ** (hsv * oct)))
+    return freq
+
+def octave_finder(chord, fund, primes, lims=(50, 50*(2**5)), max_width=False):
+    """Returns all of the possible octave shifts that would make the notes in
+    the chord audible."""
+    bit = np.arange(-4, 4)
+    cp = cartesian_product(*(bit for i in range(np.shape(chord)[-1])))
+    seive = np.zeros(len(cp), dtype=bool)
+    freq_ranges=[]
+    for i, oct in enumerate(cp):
+        freq = hsv_to_freq(chord, primes, fund, oct)
+        min_freq = np.min(freq)
+        max_freq = np.max(freq)
+        freq_ranges.append(max_freq - min_freq)
+        if np.all(min_freq >= lims[0]) and np.all(max_freq <= lims[1]):
+            seive[i] = True
+    possible_octs = cp[seive]
+    freq_ranges = np.array(freq_ranges)
+    freq_ranges = freq_ranges[seive]
+    if max_width:
+        return possible_octs, freq_ranges
+    else:
+        return possible_octs
+        
+# timbre tools
+
+def fill_in_octaves(freqs, max_freq=None, as_harms=False):
+    """For an array of frequencies, return an array will the original array plus
+    all octave multiples of each that are less than the maximum frequency."""
+    if max_freq == None:
+        max_freq = np.max(freqs)
+    out = []
+    for freq in freqs:
+        ct = 0
+        while freq * (2 ** ct) <= max_freq:
+            out.append(freq * (2 ** ct))
+            ct += 1
+    out = np.array(out)
+    if as_harms:
+        partials = np.arange(1, max_freq + 1)
+        truth = npi.contains(out, partials)
+        return truth.astype(int)
+    else:
+        return out

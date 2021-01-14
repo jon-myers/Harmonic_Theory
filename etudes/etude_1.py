@@ -11,51 +11,7 @@ from utils import *
 
 # print(t)
 
-def make_random_trajectory(length, max_step=1, dims=3, circular=True):
-    """
 
-    parameters:
-        length (integer, if circular==True, must be even)
-
-    """
-    steps = np.zeros((length, dims), dtype=int)
-    indexes = np.random.randint(dims, size=length)
-    steps[np.arange(length), indexes] = np.random.randint(-1, 2, size=length)
-    if circular == True:
-        mirror = -1 * steps[:int(length/2)]
-        np.random.shuffle(mirror)
-        steps[int(length/2):] = mirror
-    return steps
-
-
-def traj_to_absolute(traj):
-    origin = np.zeros(shape=(1, np.shape(traj)[-1]), dtype=int)
-    return np.concatenate(((origin), np.cumsum(traj, axis=0)))
-
-
-def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
-    oct = np.array(oct)
-
-    if len(np.shape(hsv)) == 2:
-        sub_prod = (primes ** hsv) * (2.0 ** (hsv * oct))
-        freq = fund * np.prod(sub_prod, axis=1)
-    else:
-        freq = fund * np.prod((primes ** hsv) * (2.0 ** (hsv * oct)))
-    return freq
-
-def octave_finder(chord, fund, primes, lims = (50, 50 * (2 ** 5))):
-    """Returns all of the possible octave shifts that would make the notes in
-    the chord audible."""
-    bit = np.arange(-4, 4)
-    cp = cartesian_product(*(bit for i in range(np.shape(chord)[-1])))
-    seive = np.zeros(len(cp), dtype=bool)
-    for i, oct in enumerate(cp):
-        freq = hsv_to_freq(chord, primes, fund, oct)
-        if np.all(np.min(freq) >= lims[0]) and np.all(np.max(freq) <= lims[1]):
-            seive[i] = True
-    possible_octs = cp[seive]
-
-    return possible_octs
 
 def make_chord_sequence(size, fund=200, primes=(3.0, 5.0, 7.0), min_comma=40,
                         lims=(100, 100*(2**3)), chord_size=5):
