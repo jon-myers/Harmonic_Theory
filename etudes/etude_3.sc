@@ -12,21 +12,28 @@
 
 // slide between
 ({var a, trig, env, bufstart;
-	a = Dbrown.new(0, 22.99, 0.5);
-	bufstart = 90;
+	bufstart = 0;
 	env = EnvGen.kr(Env([bufstart, bufstart + 22.9], [20]));
 	VOsc.ar(env, 100, 0, 0.25)*[1, 1];
 }.play)
 
 
 // step through
-({var a, trig, env, bufstart, vals;
-	a = Dbrown.new(0, 22.99, 0.5);
-	bufstart = 90;
+({var env, bufstart, vals, durs;
+	bufstart = 0;
 	vals = 0.99 * Array.series(23, bufstart, 1).stutter(2);
-	durs = [1, 0].wrapExtend(vals.size)
-	env = EnvGen.kr(Env(vals, [20]));
+	durs = [1, 0].wrapExtend(vals.size);
+	env = EnvGen.kr(Env(vals, durs));
 	VOsc.ar(env, 100, 0, 0.25)*[1, 1];
 }.play)
 
-[1, 2, 3] * 2
+// random walk
+({var a, trig, env, bufstart, vals, durs;
+	a = Dbrown.new(0, 22.99, 0.5);
+	bufstart = 0;
+	vals = 0.99 * Array.series(23, bufstart, 1).stutter(2);
+	durs = [1, 0].wrapExtend(vals.size);
+	env = EnvGen.kr(Env(vals, durs));
+	VOsc.ar(env, 100, 0, 0.25)*[1, 1];
+}.play)
+

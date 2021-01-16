@@ -296,8 +296,8 @@ def flatten(iterable):
 
 def sub_branches(points):
     """Given the points that make up a chord, returns the list of all subsets of
-    those points that form branches. If lens == true, the returned array is 
-    nested into groups by chord size, in decreasing order. 
+    those points that form branches. If lens == true, the returned array is
+    nested into groups by chord size, in decreasing order.
     """
     out = []
     size = len(points)
@@ -309,7 +309,7 @@ def sub_branches(points):
         size -= 1
         if size == 1:
             break
-    sb = [points[i] for i in out]    
+    sb = [points[i] for i in out]
     return sb
 
 def unique_sub_branches(points, count=False):
@@ -327,7 +327,7 @@ def unique_sub_branches(points, count=False):
         usb = list(i[0] for i in usb_groups)
         idx = list(i[1] for i in usb_groups)
         cts = list(i[2] for i in usb_groups)
-        
+
         all_matches = []
         ct = 0
         for l_i in range(len(sb_groups)):
@@ -553,22 +553,26 @@ def paths_to_point(point, root = [0, 0, 0]):
     paths = np.array(paths)
     return paths
 
-def cast_to_ordinal(points):
+def cast_to_ordinal(points, verbose=False):
     # needs to be fixed, not discriminating enough!
     """Given a list of harmonic space vectors, returns the collection cast to
     ordinal position. That is, with dimensions sorted firstly by max extent from
     origin, secondly by average extent in each dimension, and thirdly by order
     of extent in each dimension of point with furthest manhattan
     distance from origin."""
+    # TODO DOESN't work in more than 4 dimensions!!!
 
     mins = np.min(points, axis=0)
     points = points - mins
     origin = np.repeat(0, np.shape(points)[-1])
+    dims = np.shape(points)[-1]
 
     avg = np.average(points, axis=0)
     avg_dup_indexes = indexes_of_duplicates(avg)
-    # if len(avg_dup_indexes) > 1:
-    #     print('Potentially fatal: multiple avg dups!')
+    if verbose and len(avg_dup_indexes) > 1:
+
+        print('Potentially fatal: multiple avg dups!')
+        print(points)
     if len(avg_dup_indexes) == 1:
         avg_dup_indexes = avg_dup_indexes[0]
     avg_order = np.argsort(-1 * avg)
@@ -576,18 +580,19 @@ def cast_to_ordinal(points):
 
     maxs = np.max(points) - np.max(points, axis=0)
     avg_dup_maxs = indexes_of_duplicates(maxs)
-    # if len(avg_dup_maxs) > 1:
-    #     print('Potentially fatal: multiple avg maxs!')
+    if verbose and len(avg_dup_maxs) > 1:
+        print('Potentially fatal: multiple avg maxs!')
+        print(points)
     if len(avg_dup_maxs) == 1:
         avg_dup_maxs = avg_dup_maxs[0]
     max_order = np.argsort(maxs)
     points = points[:, max_order]
-
+    # print(avg_dup_indexes, avg_dup_maxs, '\n\n\n')
     shared_dims = np.intersect1d(avg_dup_indexes, avg_dup_maxs)
-    # if len(shared_dims) > 2:
-    #     print('Potentially fatal: shared dims greater than 2!')
-    #     print(points, '\n')
-    if len(shared_dims) == 2:
+    if verbose and len(shared_dims) > 2:
+        print('Potentially fatal: shared dims greater than 2!')
+        print(points, '\n')
+    if len(shared_dims) == 2 and dims > 2:
         dims = np.arange(np.shape(points)[-1])
         non_shared_dims = dims[np.invert(npi.contains(shared_dims, dims))]
 
@@ -1261,21 +1266,21 @@ def root_salience(points, scaled=True, indexes=False):
 
 
 def dc_alg_step(size, counts=None, alpha=1.0):
-    """Performs a single iteration of James Tenney's Dissonant Counterpoint 
-    Algorithm. Randomly chooses an index from range(size) with weights based on 
+    """Performs a single iteration of James Tenney's Dissonant Counterpoint
+    Algorithm. Randomly chooses an index from range(size) with weights based on
     the previous 'counts'. The process starts off with counts all = 1. Each time
-    an element is chosen, its count goes down to 1. Each time an element is not 
-    chosen, its count is incremented up by one. 
-    
-    Parameters: 
+    an element is chosen, its count goes down to 1. Each time an element is not
+    chosen, its count is incremented up by one.
+
+    Parameters:
         size (integer): the number of elements to choose between.
         counts (array of ints >= 1): the counts of each element.
-        alpha (float): the 'sharpness' of the weighting. 
+        alpha (float): the 'sharpness' of the weighting.
 
     """
     if np.all(counts == None):
         counts = np.zeros(size, dtype=int) + 1
-    
+
     weight = counts**alpha
     p = weight / np.sum(weight)
     choice_index = np.random.choice(np.arange(size), p=p)
@@ -1286,14 +1291,14 @@ def dc_alg_step(size, counts=None, alpha=1.0):
 
 def dc_alg(size, epochs, counts=None, alpha=1.0, return_counts=False):
     """Iterates through multiple dc_alg_steps, returning the list of element
-    indexes, and (if requested) the number of counts at the end. 
-    
+    indexes, and (if requested) the number of counts at the end.
+
     Parameters:
         size (integer): the number of elements to choose between.
         counts (array of ints >= 1): the counts of each element.
         alpha (float > 0.0): the 'sharpness' of the weighting.
         epochs (integer): the number of times to iterate through the dc_alg."""
-        
+
     choices = []
     for e in range(epochs):
         choice, counts = dc_alg_step(size, counts, alpha)
@@ -1306,8 +1311,8 @@ def dc_alg(size, epochs, counts=None, alpha=1.0, return_counts=False):
 
 
 def group_dc_alg_step(groups, group_counts=None, element_counts=None, alpha=1.0):
-    """dc_alg, but for groups of elements. 
-    
+    """dc_alg, but for groups of elements.
+
     Parameters:
         groups (array of nested arrays, each filled with ints)
     """
@@ -1315,7 +1320,7 @@ def group_dc_alg_step(groups, group_counts=None, element_counts=None, alpha=1.0)
         group_counts = np.zeros(len(groups), dtype=int) + 1
     if np.all(element_counts == None):
         element_counts = np.zeros(np.max(flatten(groups))+1, dtype=int) + 1
-    
+
     # avg of element counts for each group
     group_avg_ec = []
     for group in groups:
@@ -1332,8 +1337,8 @@ def group_dc_alg_step(groups, group_counts=None, element_counts=None, alpha=1.0)
     for i in choice:
         element_counts[i] = 1
     return choice_index, group_counts, element_counts
-    
-def group_dc_alg(groups, epochs, group_counts=None, element_counts=None, 
+
+def group_dc_alg(groups, epochs, group_counts=None, element_counts=None,
                  alpha=1.0, return_counts=False):
     cis = []
     gc = group_counts
@@ -1345,6 +1350,9 @@ def group_dc_alg(groups, epochs, group_counts=None, element_counts=None,
         return [groups[i] for i in cis], gc, ec
     else:
         return [groups[i] for i in cis]
+
+
+# def group_member_dc_alg_step(groups, )
 
 def make_random_trajectory(length, max_step=1, dims=3, circular=True):
     """
@@ -1377,7 +1385,7 @@ def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
     elif len(np.shape(hsv)) == 3:
         sub_prod = (primes ** hsv) * (2.0 ** (hsv * oct))
         freq = fund * np.prod(sub_prod, axis=2)
-        
+
     else:
         freq = fund * np.prod((primes ** hsv) * (2.0 ** (hsv * oct)))
     return freq
@@ -1403,7 +1411,7 @@ def octave_finder(chord, fund, primes, lims=(50, 50*(2**5)), max_width=False):
         return possible_octs, freq_ranges
     else:
         return possible_octs
-        
+
 # timbre tools
 
 def fill_in_octaves(freqs, max_freq=None, as_harms=False):

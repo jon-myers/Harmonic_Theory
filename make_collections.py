@@ -82,10 +82,25 @@ def pack_stats(chords, path):
         objs.append(obj)
     json.dump(objs, open(path, 'w'), cls=NpEncoder)
 
-chords = make_chords(6, 4)
+def save_all_chords(dir_path):
+    for i in range(2, 5):
+        print('dim ' + str(i))
+        chords = make_chords(7, i)
+        path = dir_path + '/' + str(i) + 'dims.json'
+        json.dump(chords, open(path, 'w'), cls=NpEncoder)
 
+def save_all_branches(dir_path):
+    for i in range(2, 5):
+        print('dim ' + str(i))
+        chords = make_branches(7, i)
+        path = dir_path + '/' + str(i) + 'dims.json'
+        json.dump(chords, open(path, 'w'), cls=NpEncoder)
+
+# c = make_chords(7, 2)
+
+save_all_branches('piece/branches')
 # print(chords[:2])
-pack_stats(chords[-1], 'etudes/chords.json')
+# pack_stats(chords[-1], 'etudes/chords.json')
 #
 # json.dump(chords, open(''))
 # test_chords = json.dump(chords, open('test.json', 'w'), cls=NpEncoder)
