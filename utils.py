@@ -275,7 +275,7 @@ def cartesian_product(*arrays):
     for i, a in enumerate(np.ix_(*arrays)):
         arr[..., i] = a
     return arr.reshape(-1, la)
-
+    
 def is_fully_connected(points):
     """Returns True if all points are exactly one unit away from at least one
     other point; else returns False"""
@@ -672,7 +672,7 @@ def get_ordinal_sorts(points):
 def reorder_points(points):
     """Reorders points such that they are in a consistent order for testing for
     uniqueness against other sets of points."""
-    primes = np.array((2, 3, 5, 7, 11, 13, 17, 19))[:np.shape(points)[-1]]
+    primes = np.array((2.0, 3, 5, 7, 11, 13, 17, 19))[:np.shape(points)[-1]]
     mult = np.product(primes ** points, axis=1)
     indexes = np.argsort(mult)
     return points[indexes]
