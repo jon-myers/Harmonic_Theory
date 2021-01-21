@@ -15,7 +15,7 @@ import random
 from fractions import Fraction
 from utils import traj_to_point_tuples, traj_to_points, get_segments, \
                   get_ratios, is_contained_by, are_roots, are_extremities, \
-                  get_layers
+                  get_layers, fix_collection
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -30,7 +30,7 @@ class Arrow3D(FancyArrowPatch):
 
 def make_plot(pts, path, primes=[2, 3, 7], octaves = None, draw_points = None,
               oct_generalized = False, dot_size=1, colors=None, ratios=True,
-              origin=False, origin_range = [-2, 3], get_ax=False, legend=True,
+              origin=False, origin_range = [-2, 3], get_ax=False, legend=False,
               range_override=[0, 0], transparent=True, connect_color='grey',
               draw_point_visible=False, draw_color='seagreen', connect_size=1,
               file_type='pdf', opacity=0.5, root_layout=False, elev=16,
