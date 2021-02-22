@@ -4,7 +4,8 @@ from scipy.spatial.distance import cdist
 from utils import cast_to_ordinal, plot_basic_hsl, reorder_points, \
     cartesian_product, sub_branches, unique_sub_branches, containment_size, \
     get_stability, get_loops, NpEncoder, get_routes, get_transposition_shell, \
-    get_multipath_shell, mean_root_distance, mean_root_angle, are_roots
+    get_multipath_shell, mean_root_distance, mean_root_angle, are_roots, \
+    hsv_to_gen_ratios, get_transpositions
 import json, itertools
 
 def make_branches(max_tones, dims):
@@ -98,7 +99,47 @@ def save_all_branches(dir_path):
 
 # c = make_chords(7, 2)
 
-save_all_branches('piece/branches')
+# save_all_branches('output_chords')
+# 
+# chords = np.array(json.load(open('output_chords/4dims.json', 'r'))[-3])
+# pack_stats(chords, 'output_chords/4dim_stats.json')
+primes = np.array((3, 5, 7))
+chords = json.load(open('output_chords/3dim_stats.json', 'r'))
+points = np.array([chord['points'] for chord in chords if len(chord['roots']) == 1])
+
+# sort by containment index
+ci = [chord['containment_index'] for chord in chords] 
+ci_sorts = np.argsort(ci)[::-1]
+points = np.array([chord['points'] for chord in chords])
+sorted_points = points[ci_sorts]
+
+# # or, 
+# # sort by number of loops
+# loops = np.array([chord['loops'] for chord in chords])
+# l_sorts = np.argsort(loops)[::-1]
+# sorted_points = points[l_sorts]
+# print(loops[l_sorts])
+
+# or sort by the size of the multipath shell
+ms = [chord['multipath_shell_size'] for chord in chords]
+ms_sorts = np.argsort(ms)
+sorted_points = points[ms_sorts]
+
+ratios = []
+for points in sorted_points:
+    for perm in get_transpositions(points):
+        ratios.append(hsv_to_gen_ratios(perm, primes))
+
+json.dump(ratios, open('output_chords/ratios.json', 'w'), cls=NpEncoder)
+
+# print(ci_sorts)
+
+# for stat in stats:
+#     print(stat['containment_size'])
+#     print(stat['containment_index'])
+#     print()
+# for c in chords:
+#     print(c, '\n')
 # print(chords[:2])
 # pack_stats(chords[-1], 'etudes/chords.json')
 #

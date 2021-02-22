@@ -475,38 +475,6 @@ def make_4d_plot(points, path):
     plt.savefig(path + '.pdf', transparent=True)
     plt.close()
 
-
-
-
-test_points = np.array((
-    (0, 0, 0, 0),
-    (0, 1, 0, 0),
-    (1, 0, 1, 0),
-    (1, 0, 0, -1),
-    (2, 0, 0, -1),
-    (0, -1, 1, 0)
-))
-
-points, hole_arr = fix_collection(test_points)
-
-permutations = np.array([i for i in itertools.permutations(range(4))])
-for i, perm in enumerate(permutations):
-    points = points[:, perm]
-
-    make_4d_plot(points, 'perms/'+str(i))
-
-# test_pts = np.array((
-#     (0, 0, 0),
-#     (0, 0, 1),
-#     (3, 0, 0),
-#     (2, -1, 0),
-#     (1, 0, 0),
-#     (0, 1, 0),
-#     (2, 0, 0)))
-# # o = create_tree_edges(test_pts)
-# # print(o)
-# plot_tree(test_pts, 'test')
-
 def add_slice_to_ax(layer, ax, layer_color='grey'):
     xy=np.array(((0, 0), (layer, 0), (0, layer)))
     triang = mtri.Triangulation(xy[:,0], xy[:, 1])
@@ -539,18 +507,3 @@ def plot_ternary(points, path):
         tax.scatter(layer, color='black')
         tax.set_title('Layer ' + str(i+1))
     plt.savefig(path + '.pdf', transparent=True)
-
-
-# plot_ternary(points, 'ternary_test')
-
-# scale=2
-# figure, tax = ternary.figure(scale=scale)
-# tax.boundary(linewidth=2.0)
-# tax.gridlines(color='grey', multiple=1)
-#
-# # tax.ticks(axis='lbr', linewidth=1)
-# tax.clear_matplotlib_ticks()
-# points = [(1, 1, 0)]
-# tax.scatter(points)
-#
-# ternary.plt.show()

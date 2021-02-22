@@ -831,7 +831,9 @@ def containment_size(points, return_containment_index=True):
     combs = [i for i in itertools.combinations(range(len(points)), 2)]
     ct = 0
     for comb in combs:
-        if is_contained_by(comb[0], comb[1]) or is_contained_by(comb[1], comb[0]):
+        p1 = points[comb[0]]
+        p2 = points[comb[1]]
+        if is_contained_by(p1, p2) or is_contained_by(p2, p1):
             ct += 1
     if return_containment_index == False:
         return ct
@@ -1389,6 +1391,17 @@ def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
     else:
         freq = fund * np.prod((primes ** hsv) * (2.0 ** (hsv * oct)))
     return freq
+
+def hsv_to_gen_ratios(hsv, primes):
+    """For a list of tones specified as harmonic series vectors, return the 
+    associated octave-generalized ratios."""
+    out = np.prod(primes ** hsv, axis=1)
+    while np.any(out < 1) or np.any(out >= 2):
+        out = np.where(out < 1, out * 2, out)
+        out = np.where(out >=2, out / 2, out)
+    return out
+
+
 
 def octave_finder(chord, fund, primes, lims=(50, 50*(2**5)), max_width=False):
     """Returns all of the possible octave shifts that would make the notes in
