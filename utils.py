@@ -275,7 +275,7 @@ def cartesian_product(*arrays):
     for i, a in enumerate(np.ix_(*arrays)):
         arr[..., i] = a
     return arr.reshape(-1, la)
-    
+
 def is_fully_connected(points):
     """Returns True if all points are exactly one unit away from at least one
     other point; else returns False"""
@@ -1393,7 +1393,7 @@ def hsv_to_freq(hsv, primes, fund, oct=(0, 0, 0)):
     return freq
 
 def hsv_to_gen_ratios(hsv, primes):
-    """For a list of tones specified as harmonic series vectors, return the 
+    """For a list of tones specified as harmonic series vectors, return the
     associated octave-generalized ratios."""
     out = np.prod(primes ** hsv, axis=1)
     while np.any(out < 1) or np.any(out >= 2):

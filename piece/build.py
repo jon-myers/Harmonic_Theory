@@ -4,7 +4,7 @@ sys.path.append(path.dirname((path.dirname(path.abspath(__file__)))))
 import math, copy, json, pickle
 import numpy as np
 from utils import *
-from plot import *
+# from plot import *
 
 def branch_sequence_step(branches, seed=None, ct_obj=None, overlap_range=(0.2, 0.7)):
     if ct_obj == None:
@@ -119,13 +119,13 @@ def sorted_comb_partition(number, max_lens):
         answer = np.array(sorted(answer, key=lambda x: x[dim], reverse=True))
     answer = answer[np.all(answer <= max_lens, axis=1)]
     return answer
-    
+
 def get_layer_trial_counts(groups, extra, limit=2):
     """For a set of grouped adjacencies, return a list of arrays filled with
     the number of adjacencies in each group to try when fitting the filler to
     the seed. List is in order of preference; if the first don't work, try the
     second, etc."""
-    
+
     if extra > limit:
         extra = limit
     group_lens = [len(i) for i in groups]
@@ -162,8 +162,8 @@ def specific_fit(perms, trial_points, chord_points, overlap):
     elif len(pos) == 1:
         choice = pos[0]
         return choice
-    else: 
-        return None        
+    else:
+        return None
 
 def try_to_fit(points, filler, overlap):
     perms = get_transpositions(filler)
@@ -195,12 +195,12 @@ def try_to_fit(points, filler, overlap):
             if len(np.shape(trial_ex_points[0])) == 1:
                 choice = specific_fit(perms, trial_ex_points, points, overlap)
                 if np.all(choice != None):
-                    return choice  
+                    return choice
             else:
-                for trial_points in trial_ex_points[0]:                
+                for trial_points in trial_ex_points[0]:
                     choice = specific_fit(perms, trial_points, points, overlap)
                     if np.all(choice != None):
-                        return choice                                    
+                        return choice
         elif len(trial_ex_points) > 1:
             cp_indexes = cartesian_product(*[np.arange(len(i)) for i in trial_ex_points])
             for i, index_list in enumerate(cp_indexes):
@@ -212,9 +212,9 @@ def try_to_fit(points, filler, overlap):
                 trial_points = np.concatenate(trial_points)
                 choice = specific_fit(perms, trial_points[:3], points, overlap)
                 if np.all(choice != None):
-                    return choice    
+                    return choice
     return None
-            
+
 def overlay_translations(point, chord):
     """Given a fixed point and a chord in some shared set of dimensions,
     return all of the possible chord translations that intersect the point."""
@@ -241,8 +241,8 @@ def multi_overlay_translations(points, chord):
 
 def build_sequence(chords, epochs, max_overlay, overlap_range):
     """
-    
-    
+
+
     if overlap_range is a list, rather than a tuple, its len must be one less
     than the number of epochs. """
     seed, ct_obj = branch_sequence_step(chords)
@@ -260,13 +260,13 @@ def build_sequence(chords, epochs, max_overlay, overlap_range):
         if len(overlay) > max_overlay:
             del overlay[0]
     return succession
-            
+
 
 
 # chords = json.load(open('piece/branches/3dims.json', 'r'))
-# 
+#
 # succession = build_sequence(chords[1:-2], 20, 4, overlap_range = (0.8, 1.0))
-# 
+#
 # pickle.dump(succession, open('piece/sequences/sequence_0.p', 'wb'))
 # for i, o in enumerate(overlay):
 #     make_plot(o, 'piece/plots/' + str(i), origin=True, connect_color='black')
